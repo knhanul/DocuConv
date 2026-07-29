@@ -1,0 +1,5 @@
+Validation summary
+- Python compileall: passed
+- pytest: 7 passed
+- QML delimiter/quote structural check: passed
+- Windows COM conversion: not executed (Windows/Hancom/Office unavailable in build environment)
