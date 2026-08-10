@@ -15,6 +15,7 @@ from backend.job_model import ConversionJob, JobListModel
 from backend.path_utils import normalize_path, output_file_path, output_image_directory, reserve_batch_file_path
 from backend.selection_manager import SelectionManager
 from backend.settings import AppSettings
+from backend.version import APP_VERSION, BUILD_DATE
 from backend.worker import ConversionWorker
 
 
@@ -135,6 +136,18 @@ class AppController(QObject):
     def logoPath(self) -> str:
         return QUrl.fromLocalFile(str(self._app_dir / "assets" / "posid_logo.png")).toString()
 
+    @Property(str, constant=True)
+    def aiResearchImagePath(self) -> str:
+        return QUrl.fromLocalFile(str(self._app_dir / "assets" / "AIResearch.png")).toString()
+
+    @Property(str, constant=True)
+    def appVersion(self) -> str:
+        return APP_VERSION
+
+    @Property(str, constant=True)
+    def buildDate(self) -> str:
+        return BUILD_DATE
+
     # --------------------------- UI actions -----------------------------
     @Slot(int)
     def toggleFolderExpanded(self, row: int) -> None:
@@ -180,11 +193,16 @@ class AppController(QObject):
 
     @Slot()
     def chooseOutputFolder(self) -> None:
-        folder = QFileDialog.getExistingDirectory(None, "변환 결과 폴더 선택", self._output_folder)
-        if folder:
-            self._output_folder = folder
-            self._preferences.setValue("outputFolder", folder)
-            self.outputFolderChanged.emit()
+        dialog = QFileDialog(None, "변환 결과 폴더 선택", self._output_folder)
+        dialog.setFileMode(QFileDialog.Directory)
+        dialog.setOption(QFileDialog.ShowDirsOnly, False)
+        dialog.setOption(QFileDialog.DontUseNativeDialog, True)
+        if dialog.exec() == QFileDialog.Accepted:
+            folders = dialog.selectedFiles()
+            if folders:
+                self._output_folder = folders[0]
+                self._preferences.setValue("outputFolder", folders[0])
+                self.outputFolderChanged.emit()
 
     @Slot(str)
     def setConversionMode(self, mode: str) -> None:

@@ -7,6 +7,7 @@ from backend.file_types import EXCEL_EXTENSIONS, HWP_EXTENSIONS, POWERPOINT_EXTE
 from backend.job_model import ConversionJob
 from backend.settings import AppSettings
 from converters.base import ProgressCallback, UnsupportedFormatError
+from converters.hwpx.hwp_automation import HwpAutomationManager
 from converters.hwpx.hwp_to_hwpx import HwpToHwpxConverter
 from converters.image.document_to_image import DocumentToImageConverter
 from converters.pdf.excel_to_pdf import ExcelToPdfConverter
@@ -18,8 +19,9 @@ from converters.pdf.word_to_pdf import WordToPdfConverter
 class ConverterRegistry:
     def __init__(self, settings: AppSettings) -> None:
         self._settings = settings
-        self._hwp_to_hwpx = HwpToHwpxConverter(settings)
-        self._hwp_to_pdf = HwpToPdfConverter(settings)
+        self._hwp_manager = HwpAutomationManager(settings)
+        self._hwp_to_hwpx = HwpToHwpxConverter(self._hwp_manager)
+        self._hwp_to_pdf = HwpToPdfConverter(self._hwp_manager)
         self._word_to_pdf = WordToPdfConverter(settings)
         self._excel_to_pdf = ExcelToPdfConverter(settings)
         self._powerpoint_to_pdf = PowerPointToPdfConverter(settings)
@@ -55,3 +57,6 @@ class ConverterRegistry:
             self._powerpoint_to_pdf.convert(input_path, output_path, progress, cancel_event)
         else:
             raise UnsupportedFormatError(f"PDF 변환을 지원하지 않는 형식입니다: {ext}")
+
+    def shutdown(self) -> None:
+        self._hwp_manager.shutdown()

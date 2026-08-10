@@ -65,6 +65,7 @@ Item {
                         RowLayout {
                             Layout.fillWidth: true
                             Layout.preferredHeight: 146
+                            Layout.maximumHeight: 146
                             spacing: 9
 
                             TargetCard {
@@ -136,13 +137,20 @@ Item {
                                 onToggled: appController.setOpenAfterComplete(checked)
                             }
                             Item { Layout.fillWidth: true }
-                            Label { visible: appController.conversionMode === "image"; text: "이미지 형식"; color: "#53657C" }
+                        }
+
+                        RowLayout {
+                            Layout.fillWidth: true
+                            visible: appController.conversionMode === "image"
+                            spacing: 8
+                            Item { Layout.preferredWidth: 74 }
+                            Label { text: "이미지 형식"; color: "#53657C" }
                             ComboBox {
-                                visible: appController.conversionMode === "image"
                                 model: ["PNG", "JPG", "TIFF"]
                                 currentIndex: appController.imageFormat === "png" ? 0 : appController.imageFormat === "jpg" ? 1 : 2
                                 onActivated: appController.setImageFormat(currentText.toLowerCase())
                             }
+                            Item { Layout.fillWidth: true }
                         }
                     }
                 }

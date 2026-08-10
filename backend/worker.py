@@ -60,6 +60,7 @@ class ConversionWorker(QThread):
                     # 디버그 빌드에서 확인할 수 있도록 stderr에도 상세 스택을 남깁니다.
                     traceback.print_exc()
                 self.jobFinished.emit(job.id)
+            registry.shutdown()
         finally:
             if com_initialized:
                 import pythoncom

@@ -36,6 +36,86 @@ ApplicationWindow {
         Text { id: messageDialogText; visible: false }
     }
 
+    Dialog {
+        id: aboutDialog
+        modal: true
+        anchors.centerIn: parent
+        width: 520
+        title: "버전 정보"
+        standardButtons: Dialog.Ok
+
+        background: Rectangle {
+            color: "#FFFFFF"
+            border.color: "#E2E7EE"
+            border.width: 1
+            radius: 8
+        }
+
+        contentItem: ColumnLayout {
+            spacing: 16
+            Layout.fillWidth: true
+
+            Image {
+                source: appController.aiResearchImagePath
+                Layout.fillWidth: true
+                Layout.preferredHeight: 280
+                fillMode: Image.PreserveAspectFit
+                smooth: true
+                Layout.alignment: Qt.AlignHCenter
+            }
+
+            Label {
+                text: "우체국금융개발원 우정정보관리원 AI킥오프모임"
+                color: "#13223A"
+                font.pixelSize: 16
+                font.bold: true
+                Layout.alignment: Qt.AlignHCenter
+            }
+
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 1
+                color: "#E2E7EE"
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 8
+
+                Label {
+                    text: "버전"
+                    color: "#71819A"
+                    font.pixelSize: 13
+                    Layout.preferredWidth: 80
+                }
+                Label {
+                    text: appController.appVersion
+                    color: "#25364E"
+                    font.pixelSize: 13
+                    font.bold: true
+                }
+            }
+
+            RowLayout {
+                Layout.fillWidth: true
+                spacing: 8
+
+                Label {
+                    text: "빌드 날짜"
+                    color: "#71819A"
+                    font.pixelSize: 13
+                    Layout.preferredWidth: 80
+                }
+                Label {
+                    text: appController.buildDate
+                    color: "#25364E"
+                    font.pixelSize: 13
+                    font.bold: true
+                }
+            }
+        }
+    }
+
     Connections {
         target: appController
         function onNotify(title, message, level) {
@@ -85,6 +165,29 @@ ApplicationWindow {
                         font.pixelSize: 13
                     }
                 }
+
+                Item { Layout.fillWidth: true }
+
+                AbstractButton {
+                    Layout.preferredWidth: 36
+                    Layout.preferredHeight: 36
+                    Layout.alignment: Qt.AlignVCenter
+
+                    contentItem: Label {
+                        text: "ⓘ"
+                        color: parent.hovered ? "#13223A" : "#71819A"
+                        font.pixelSize: 22
+                        horizontalAlignment: Text.AlignHCenter
+                        verticalAlignment: Text.AlignVCenter
+                    }
+
+                    background: Rectangle {
+                        color: parent.hovered ? "#F4F7FB" : "transparent"
+                        radius: 18
+                    }
+
+                    onClicked: aboutDialog.open()
+                }
             }
         }
 
@@ -119,7 +222,7 @@ ApplicationWindow {
                     Label {
                         width: 94
                         height: 44
-                        text: "v1.0.0"
+                        text: "v" + appController.appVersion
                         color: "#CED7E3"
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter

@@ -65,13 +65,17 @@ Rectangle {
                     anchors.rightMargin: 6
                     spacing: 4
 
-                    ToolButton {
+                    Item {
                         Layout.preferredWidth: 22
                         Layout.preferredHeight: 28
-                        enabled: rowItem.hasChildren
-                        text: rowItem.hasChildren ? (rowItem.expanded ? "⌄" : "›") : ""
-                        font.pixelSize: 17
-                        onClicked: appController.toggleFolderExpanded(index)
+                        ToolButton {
+                            anchors.fill: parent
+                            visible: rowItem.hasChildren
+                            enabled: rowItem.hasChildren
+                            text: rowItem.expanded ? "⌄" : "›"
+                            font.pixelSize: 17
+                            onClicked: appController.toggleFolderExpanded(index)
+                        }
                     }
                     CheckBox {
                         id: folderCheck

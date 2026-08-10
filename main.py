@@ -10,9 +10,13 @@ from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtWidgets import QApplication
 
 from backend.app_controller import AppController
+from backend.version import APP_VERSION
 
 
-APP_DIR = Path(__file__).resolve().parent
+if getattr(sys, "frozen", False):
+    APP_DIR = Path(sys._MEIPASS)
+else:
+    APP_DIR = Path(__file__).resolve().parent
 
 
 def configure_qt_environment() -> None:
@@ -27,7 +31,7 @@ def main() -> int:
     QCoreApplication.setOrganizationName("POSID")
     QCoreApplication.setOrganizationDomain("posid.co.kr")
     QCoreApplication.setApplicationName("POSID Document Converter")
-    QCoreApplication.setApplicationVersion("1.0.0")
+    QCoreApplication.setApplicationVersion(APP_VERSION)
 
     app = QApplication(sys.argv)
     app.setQuitOnLastWindowClosed(True)
