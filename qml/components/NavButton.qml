@@ -29,6 +29,7 @@ Button {
     contentItem: Column {
         spacing: 8
         width: root.width
+        anchors.verticalCenter: parent.verticalCenter
 
         Item {
             width: parent.width

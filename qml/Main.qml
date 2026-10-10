@@ -220,8 +220,8 @@ ApplicationWindow {
 
                 Image {
                     source: appController.signaturePath
-                    Layout.preferredWidth: 148
-                    Layout.preferredHeight: 70
+                    Layout.preferredWidth: 116
+                    Layout.preferredHeight: 56
                     fillMode: Image.PreserveAspectFit
                     smooth: true
                     mipmap: true
@@ -310,7 +310,8 @@ ApplicationWindow {
                         onClicked: window.currentPage = 1
                     }
 
-                    Item { width: 1; height: Math.max(0, window.height - 88 - 184 - 52) }
+                    Item { width: 1; height: Math.max(0, window.height - 88 - 41 - 184) }
+
                     Rectangle {
                         width: 100
                         height: 1
