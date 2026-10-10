@@ -30,16 +30,16 @@ class ConversionJob:
 
 
 class JobListModel(QAbstractListModel):
-    IdRole = Qt.UserRole + 1
-    SequenceRole = Qt.UserRole + 2
-    FileNameRole = Qt.UserRole + 3
-    InputPathRole = Qt.UserRole + 4
-    OutputPathRole = Qt.UserRole + 5
-    TargetRole = Qt.UserRole + 6
-    StatusRole = Qt.UserRole + 7
-    ProgressRole = Qt.UserRole + 8
-    MessageRole = Qt.UserRole + 9
-    SelectedRole = Qt.UserRole + 10
+    IdRole = Qt.ItemDataRole.UserRole + 1
+    SequenceRole = Qt.ItemDataRole.UserRole + 2
+    FileNameRole = Qt.ItemDataRole.UserRole + 3
+    InputPathRole = Qt.ItemDataRole.UserRole + 4
+    OutputPathRole = Qt.ItemDataRole.UserRole + 5
+    TargetRole = Qt.ItemDataRole.UserRole + 6
+    StatusRole = Qt.ItemDataRole.UserRole + 7
+    ProgressRole = Qt.ItemDataRole.UserRole + 8
+    MessageRole = Qt.ItemDataRole.UserRole + 9
+    SelectedRole = Qt.ItemDataRole.UserRole + 10
 
     overallChanged = Signal()
 
@@ -64,7 +64,7 @@ class JobListModel(QAbstractListModel):
     def rowCount(self, parent=QModelIndex()) -> int:
         return 0 if parent.isValid() else len(self._jobs)
 
-    def data(self, index: QModelIndex, role=Qt.DisplayRole):
+    def data(self, index: QModelIndex, role=Qt.ItemDataRole.DisplayRole):
         if not index.isValid() or not 0 <= index.row() < len(self._jobs):
             return None
         job = self._jobs[index.row()]
@@ -72,7 +72,7 @@ class JobListModel(QAbstractListModel):
             return job.id
         if role == self.SequenceRole:
             return index.row() + 1
-        if role in (self.FileNameRole, Qt.DisplayRole):
+        if role in (self.FileNameRole, Qt.ItemDataRole.DisplayRole):
             return job.input_path.name
         if role == self.InputPathRole:
             return str(job.input_path)

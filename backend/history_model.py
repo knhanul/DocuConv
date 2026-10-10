@@ -10,13 +10,13 @@ from backend.job_model import ConversionJob
 
 
 class HistoryModel(QAbstractListModel):
-    FileNameRole = Qt.UserRole + 1
-    InputPathRole = Qt.UserRole + 2
-    OutputPathRole = Qt.UserRole + 3
-    TargetRole = Qt.UserRole + 4
-    StatusRole = Qt.UserRole + 5
-    FinishedAtRole = Qt.UserRole + 6
-    MessageRole = Qt.UserRole + 7
+    FileNameRole = Qt.ItemDataRole.UserRole + 1
+    InputPathRole = Qt.ItemDataRole.UserRole + 2
+    OutputPathRole = Qt.ItemDataRole.UserRole + 3
+    TargetRole = Qt.ItemDataRole.UserRole + 4
+    StatusRole = Qt.ItemDataRole.UserRole + 5
+    FinishedAtRole = Qt.ItemDataRole.UserRole + 6
+    MessageRole = Qt.ItemDataRole.UserRole + 7
 
     def __init__(self, storage_path: Path, max_items: int, parent=None) -> None:
         super().__init__(parent)
@@ -39,7 +39,7 @@ class HistoryModel(QAbstractListModel):
     def rowCount(self, parent=QModelIndex()) -> int:
         return 0 if parent.isValid() else len(self._items)
 
-    def data(self, index: QModelIndex, role=Qt.DisplayRole):
+    def data(self, index: QModelIndex, role=Qt.ItemDataRole.DisplayRole):
         if not index.isValid() or not 0 <= index.row() < len(self._items):
             return None
         item = self._items[index.row()]
@@ -52,7 +52,7 @@ class HistoryModel(QAbstractListModel):
             self.FinishedAtRole: "finishedAt",
             self.MessageRole: "message",
         }
-        if role == Qt.DisplayRole:
+        if role == Qt.ItemDataRole.DisplayRole:
             return item.get("fileName", "")
         key = mapping.get(role)
         return item.get(key, "") if key else None

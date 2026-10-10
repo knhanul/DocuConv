@@ -30,18 +30,18 @@ class FolderNode:
 
 
 class FolderTreeModel(QAbstractListModel):
-    PathRole = Qt.UserRole + 1
-    NameRole = Qt.UserRole + 2
-    DepthRole = Qt.UserRole + 3
-    ExpandedRole = Qt.UserRole + 4
-    HasChildrenRole = Qt.UserRole + 5
-    ChildCountRole = Qt.UserRole + 6
-    ActiveRole = Qt.UserRole + 7
-    IsDriveRole = Qt.UserRole + 8
-    KindRole = Qt.UserRole + 9
-    IconRole = Qt.UserRole + 10
-    IsQuickRole = Qt.UserRole + 11
-    CanUnpinRole = Qt.UserRole + 12
+    PathRole = Qt.ItemDataRole.UserRole + 1
+    NameRole = Qt.ItemDataRole.UserRole + 2
+    DepthRole = Qt.ItemDataRole.UserRole + 3
+    ExpandedRole = Qt.ItemDataRole.UserRole + 4
+    HasChildrenRole = Qt.ItemDataRole.UserRole + 5
+    ChildCountRole = Qt.ItemDataRole.UserRole + 6
+    ActiveRole = Qt.ItemDataRole.UserRole + 7
+    IsDriveRole = Qt.ItemDataRole.UserRole + 8
+    KindRole = Qt.ItemDataRole.UserRole + 9
+    IconRole = Qt.ItemDataRole.UserRole + 10
+    IsQuickRole = Qt.ItemDataRole.UserRole + 11
+    CanUnpinRole = Qt.ItemDataRole.UserRole + 12
 
     QUICK_SECTION = "빠른 액세스"
     PC_SECTION = "내 PC"
@@ -75,13 +75,13 @@ class FolderTreeModel(QAbstractListModel):
     def rowCount(self, parent=None) -> int:
         return 0 if parent is not None and parent.isValid() else len(self._nodes)
 
-    def data(self, index: QModelIndex, role=Qt.DisplayRole):
+    def data(self, index: QModelIndex, role=Qt.ItemDataRole.DisplayRole):
         if not index.isValid() or not 0 <= index.row() < len(self._nodes):
             return None
         node = self._nodes[index.row()]
         if role == self.PathRole:
             return str(node.path) if node.path else ""
-        if role in (self.NameRole, Qt.DisplayRole):
+        if role in (self.NameRole, Qt.ItemDataRole.DisplayRole):
             return node.name
         if role == self.DepthRole:
             return node.depth

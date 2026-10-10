@@ -19,14 +19,14 @@ class FileEntry:
 
 
 class FileListModel(QAbstractListModel):
-    PathRole = Qt.UserRole + 1
-    NameRole = Qt.UserRole + 2
-    SizeRole = Qt.UserRole + 3
-    ModifiedRole = Qt.UserRole + 4
-    CheckedRole = Qt.UserRole + 5
-    TypeRole = Qt.UserRole + 6
-    ExtensionRole = Qt.UserRole + 7
-    IsFolderRole = Qt.UserRole + 8
+    PathRole = Qt.ItemDataRole.UserRole + 1
+    NameRole = Qt.ItemDataRole.UserRole + 2
+    SizeRole = Qt.ItemDataRole.UserRole + 3
+    ModifiedRole = Qt.ItemDataRole.UserRole + 4
+    CheckedRole = Qt.ItemDataRole.UserRole + 5
+    TypeRole = Qt.ItemDataRole.UserRole + 6
+    ExtensionRole = Qt.ItemDataRole.UserRole + 7
+    IsFolderRole = Qt.ItemDataRole.UserRole + 8
 
     SORT_COLUMNS = {"name", "type", "size", "modified"}
 
@@ -59,13 +59,13 @@ class FileListModel(QAbstractListModel):
     def rowCount(self, parent=None) -> int:
         return 0 if parent is not None and parent.isValid() else len(self._items)
 
-    def data(self, index: QModelIndex, role=Qt.DisplayRole):
+    def data(self, index: QModelIndex, role=Qt.ItemDataRole.DisplayRole):
         if not index.isValid() or not 0 <= index.row() < len(self._items):
             return None
         item = self._items[index.row()]
         if role == self.PathRole:
             return str(item.path)
-        if role in (self.NameRole, Qt.DisplayRole):
+        if role in (self.NameRole, Qt.ItemDataRole.DisplayRole):
             return item.path.name
         if role == self.SizeRole:
             return "" if item.is_folder else self._format_size(item.size)
