@@ -10,8 +10,8 @@
 - 폴더 전체 또는 개별 파일 체크 선택
 - HWP → HWPX 일괄 변환
 - HWP/HWPX 및 Word·Excel·PowerPoint 문서 → PDF 변환
-- PDF 또는 문서 1개 → 페이지별 PNG/JPG/TIFF 변환
-- 출력 폴더 지정, 하위 폴더 구조 유지, 중복 파일명 자동 처리
+- PDF 1개 → 페이지별 PNG/JPG/TIFF 변환
+- 출력 폴더 지정, 출력 폴더 바로가기, 중복 파일명 자동 처리
 - 순차 변환 작업 큐, 파일별/전체 진행률, 취소, 오류 후 다음 작업 계속
 - 작업 이력 저장 및 결과 폴더 열기
 - 포시드 로고와 제공된 포시드 AI 프로그램 계열 UI 적용
@@ -21,13 +21,13 @@
 | 기능 | 입력 | 출력 | 필요한 데스크톱 프로그램 |
 |---|---|---|---|
 | HWPX 변환 | HWP | HWPX | 한컴오피스 한글 |
-| PDF 변환 | HWP, HWPX | PDF | 한컴오피스 한글 |
-| PDF 변환 | DOC, DOCX, DOCM, DOT, DOTX, RTF, ODT | PDF | Microsoft Word |
-| PDF 변환 | XLS, XLSX, XLSM, XLSB, CSV | PDF | Microsoft Excel |
-| PDF 변환 | PPT, PPTX, PPTM, PPS, PPSX | PDF | Microsoft PowerPoint |
-| 이미지 변환 | 위 형식 또는 PDF | PNG/JPG/TIFF | PDF는 불필요, 문서는 해당 프로그램 필요 |
+| PDF 변환 | HWP, HWPX | PDF | 한컴오피스 한글 우선, 없으면 LibreOffice + H2Orestart + Java |
+| PDF 변환 | DOC, DOCX, DOCM, DOT, DOTX, RTF, ODT | PDF | Microsoft Word 우선, 없으면 LibreOffice |
+| PDF 변환 | XLS, XLSX, XLSM, XLSB, CSV | PDF | Microsoft Excel 우선, 없으면 LibreOffice |
+| PDF 변환 | PPT, PPTX, PPTM, PPS, PPSX | PDF | Microsoft PowerPoint 우선, 없으면 LibreOffice |
+| 이미지 변환 | PDF만 | PNG/JPG/TIFF | 불필요 (pypdfium2로 직접 렌더링) |
 
-> **중요:** HWP → HWPX 및 HWP/HWPX → PDF 변환은 한글 프로그램의 Windows COM 자동화를 사용하므로 한컴오피스 한글이 설치된 PC에서만 동작합니다.
+> **중요:** HWP → HWPX는 여전히 한컴오피스 한글이 필요합니다. 대체 엔진은 PDF 변환 및 문서 → 이미지 변환에 적용됩니다. LibreOffice는 원본과 글꼴·레이아웃·페이지 구성이 다를 수 있고, 암호화 문서나 일부 형식은 변환되지 않을 수 있습니다.
 
 ## 폴더 구조
 
@@ -94,6 +94,41 @@ dist\POSID_DocumentConverter\
 artifacts\POSID_DocumentConverter_v1.0.0_win-x64.zip
 ```
 
+## PDF 변환 엔진 및 미설치 환경 설정
+
+PDF 변환 전에 원본 프로그램의 COM 등록을 확인합니다. 등록된 한글·Word·Excel·PowerPoint를 우선 사용하고, 미등록 또는 COM 실행 불가 시 LibreOffice로 전환합니다. 문서 열기·저장 오류나 취소는 대체 엔진으로 재시도하지 않습니다. 대체 엔진도 없으면 필요한 구성요소를 오류 메시지로 안내합니다. 문서는 클라우드로 전송하지 않습니다.
+
+Office 문서의 대체 변환은 LibreOffice 설치 후 바로 사용할 수 있습니다. 기본 설치 경로와 PATH에서 `soffice`를 찾으며, 다른 위치의 런타임은 `appsettings.json`에 절대 경로로 지정합니다.
+
+```json
+{
+  "libreOfficePath": "C:/Program Files/LibreOffice/program/soffice.com",
+  "libreOfficeHwpProfile": "%LOCALAPPDATA%/POSID/LibreOfficeHwp"
+}
+```
+
+`libreOfficePath`를 비워 두면 자동 탐색합니다. `libreOfficeHwpProfile`은 HWP/HWPX 대체 변환에만 필요합니다. 설정 경로에는 환경 변수와 `~`를 사용할 수 있습니다. 단일 EXE 배포에서는 EXE 옆의 `appsettings.json`이 내장 설정을 대체합니다. 외부 설정 파일 없이 `POSID_LIBREOFFICE_PATH`, `POSID_LIBREOFFICE_HWP_PROFILE` 환경 변수로 지정할 수도 있습니다.
+
+### HWP/HWPX 대체 변환 준비
+
+1. LibreOffice와 해당 LibreOffice의 비트 수에 맞는 Java 런타임을 설치합니다.
+2. PowerShell에서 별도의 변환용 프로필로 LibreOffice를 실행합니다.
+
+```powershell
+$profile = Join-Path $env:LOCALAPPDATA "POSID\LibreOfficeHwp"
+$profileUri = ([System.Uri]::new($profile)).AbsoluteUri
+& "C:\Program Files\LibreOffice\program\soffice.exe" "-env:UserInstallation=$profileUri"
+```
+
+3. 이 창의 확장 관리자에서 공식 H2Orestart OXT를 설치하고, 옵션의 LibreOffice → 고급에서 Java 런타임 사용을 설정합니다. 확장 설치 후 필요하면 같은 명령으로 다시 실행하여 적용합니다.
+4. LibreOffice를 완전히 종료한 뒤 위 프로필 경로를 `libreOfficeHwpProfile`에 지정합니다. `user` 폴더의 상위 경로입니다.
+
+H2Orestart: https://github.com/ebandal/H2Orestart
+
+변환 시 프로필을 임시 작업 폴더에 복사하여 기존 LibreOffice와 분리하고, 복사본의 매크로 실행을 비활성화합니다. 확장 등록 확인 후 `Hwp2002_Reader` 필터로 읽습니다. 작업당 제한 시간은 외부 명령별 120초이며, 취소·시간 초과 시 이 작업에서 실행한 프로세스를 종료합니다. 기존 파일을 성공 결과로 오인하지 않도록 임시 폴더의 새 PDF를 검사한 뒤 출력 위치로 복사합니다.
+
+LibreOffice, Java, H2Orestart는 자동 다운로드하거나 EXE에 내장하지 않습니다. 한글·Office가 없는 배포 PC에는 별도로 준비해야 합니다. H2Orestart는 현재 소스 기준 GPL-3.0이므로 런타임·확장을 동봉할 경우 실제 배포 버전의 라이선스를 확인하세요.
+
 ## 한글 보안 모듈
 
 한글 자동화 환경에 따라 파일 경로 확인 보안 모듈이 필요할 수 있습니다. `appsettings.json`에서 한컴이 제공하거나 사내에 등록한 모듈명을 지정합니다.
@@ -114,7 +149,8 @@ artifacts\POSID_DocumentConverter_v1.0.0_win-x64.zip
 ## 구현 및 테스트 상태
 
 - Python 구문 검사와 플랫폼 비의존 단위 테스트를 통과하도록 구성했습니다.
-- 현재 소스 생성 환경에는 Windows COM, 한글, Microsoft Office가 없어 실제 문서 변환은 검증하지 못했습니다.
+- 자동 테스트는 설치 감지, 엔진 선택, 명령 생성, 출력 검증, 취소·시간 초과 처리를 검증합니다. 실제 엔진의 문서 렌더링 품질 검증은 별도로 필요합니다.
+- 테스트 실행: `.\.venv\Scripts\python.exe -m pytest`.
 - 먼저 HWP, HWPX, DOCX, XLSX, PPTX, PDF 샘플을 각각 한 개씩 변환한 후 사내 배포하는 것이 안전합니다.
 - 일부 암호화 문서, 보안 문서, 매크로 문서, 손상 파일은 원본 프로그램에서도 자동 변환이 제한될 수 있습니다.
 

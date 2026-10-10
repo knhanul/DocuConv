@@ -20,11 +20,50 @@ Item {
                 anchors.margins: 10
                 spacing: 8
 
-                Label {
-                    text: "파일 탐색"
-                    color: "#17243A"
-                    font.pixelSize: 17
-                    font.bold: true
+                Item {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 30
+                    clip: true
+
+                    Row {
+                        id: breadcrumbRow
+                        x: Math.min(0, parent.width - implicitWidth)
+                        height: 30
+                        spacing: 0
+                        Repeater {
+                            model: appController.currentBreadcrumbs
+                            delegate: Row {
+                                required property int index
+                                required property var modelData
+                                Label {
+                                    height: 30
+                                    width: 16
+                                    visible: parent.index > 0
+                                    text: "›"
+                                    color: "#8A9099"
+                                    font.pixelSize: 14
+                                    verticalAlignment: Text.AlignVCenter
+                                    horizontalAlignment: Text.AlignHCenter
+                                }
+                                Button {
+                                    id: crumbButton
+                                    objectName: "breadcrumbButton"
+                                    property string crumbPath: parent.modelData.path
+                                    height: 30
+                                    leftPadding: 6
+                                    rightPadding: 6
+                                    text: parent.modelData.label
+                                    font.pixelSize: 14
+                                    font.bold: true
+                                    flat: true
+                                    Accessible.name: text
+                                    ToolTip.visible: hovered
+                                    ToolTip.text: crumbPath
+                                    onClicked: appController.navigateToFolder(crumbPath)
+                                }
+                            }
+                        }
+                    }
                 }
 
                 SplitView {
@@ -94,7 +133,7 @@ Item {
                                 Layout.fillWidth: true
                                 Layout.fillHeight: true
                                 title: "이미지 변환"
-                                subtitle: "문서 1개 → 페이지별 이미지"
+                                subtitle: "PDF 1개 → 페이지별 이미지"
                                 iconText: "IMG"
                                 accentColor: "#20A66A"
                                 selected: appController.conversionMode === "image"
@@ -121,35 +160,36 @@ Item {
                             Layout.fillWidth: true
                             spacing: 14
                             Label { text: "옵션"; color: "#26364D"; font.bold: true; Layout.preferredWidth: 74 }
-                            CheckBox {
-                                text: "하위 폴더 구조 유지"
-                                checked: appController.preserveStructure
-                                onToggled: appController.setPreserveStructure(checked)
+                            RowLayout {
+                                visible: appController.conversionMode === "pdf"
+                                spacing: 8
+                                Label { text: "변환 방식"; color: "#53657C" }
+                                ComboBox {
+                                    objectName: "pdfConversionMethodCombo"
+                                    model: ["원본 프로그램으로 변환", "LibreOffice로 변환"]
+                                    currentIndex: appController.pdfConversionMethod === "libreoffice" ? 1 : 0
+                                    enabled: !appController.busy
+                                    onActivated: appController.setPdfConversionMethod(currentIndex === 1 ? "libreoffice" : "original")
+                                    ToolTip.visible: hovered
+                                    ToolTip.text: "LibreOffice 방식은 별도 설치가 필요하며 문서 레이아웃이 달라질 수 있습니다. HWP/HWPX는 H2Orestart와 Java 설정도 필요합니다."
+                                }
+                            }
+                            RowLayout {
+                                visible: appController.conversionMode === "image"
+                                spacing: 8
+                                Label { text: "이미지 형식"; color: "#53657C" }
+                                ComboBox {
+                                    model: ["PNG", "JPG", "TIFF"]
+                                    currentIndex: appController.imageFormat === "png" ? 0 : appController.imageFormat === "jpg" ? 1 : 2
+                                    onActivated: appController.setImageFormat(currentText.toLowerCase())
+                                }
                             }
                             CheckBox {
                                 text: "동일 파일 덮어쓰기"
                                 checked: appController.overwrite
                                 onToggled: appController.setOverwrite(checked)
                             }
-                            CheckBox {
-                                text: "완료 후 출력 폴더 열기"
-                                checked: appController.openAfterComplete
-                                onToggled: appController.setOpenAfterComplete(checked)
-                            }
-                            Item { Layout.fillWidth: true }
-                        }
-
-                        RowLayout {
-                            Layout.fillWidth: true
-                            visible: appController.conversionMode === "image"
-                            spacing: 8
-                            Item { Layout.preferredWidth: 74 }
-                            Label { text: "이미지 형식"; color: "#53657C" }
-                            ComboBox {
-                                model: ["PNG", "JPG", "TIFF"]
-                                currentIndex: appController.imageFormat === "png" ? 0 : appController.imageFormat === "jpg" ? 1 : 2
-                                onActivated: appController.setImageFormat(currentText.toLowerCase())
-                            }
+                            Button { text: "출력 폴더 열기"; onClicked: appController.openOutputFolder() }
                             Item { Layout.fillWidth: true }
                         }
                     }

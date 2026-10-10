@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import sys
+from dataclasses import replace
 from pathlib import Path
 
-from PySide6.QtCore import QObject, Property, QSettings, QStandardPaths, QUrl, Signal, Slot
+from PySide6.QtCore import Property, QObject, QSettings, QStandardPaths, QUrl, Signal, Slot
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QFileDialog
 
@@ -12,7 +13,12 @@ from backend.file_types import target_extensions
 from backend.folder_tree_model import FolderTreeModel
 from backend.history_model import HistoryModel
 from backend.job_model import ConversionJob, JobListModel
-from backend.path_utils import normalize_path, output_file_path, output_image_directory, reserve_batch_file_path
+from backend.path_utils import (
+    normalize_path,
+    output_file_path,
+    output_image_directory,
+    reserve_batch_file_path,
+)
 from backend.selection_manager import SelectionManager
 from backend.settings import AppSettings
 from backend.version import APP_VERSION, BUILD_DATE
@@ -23,11 +29,12 @@ class AppController(QObject):
     outputFolderChanged = Signal()
     conversionModeChanged = Signal()
     imageFormatChanged = Signal()
-    preserveStructureChanged = Signal()
+    pdfConversionMethodChanged = Signal()
     overwriteChanged = Signal()
-    openAfterCompleteChanged = Signal()
     busyChanged = Signal()
     currentFolderChanged = Signal()
+    quickAccessChanged = Signal()
+    columnOrderChanged = Signal()
     selectionSummaryChanged = Signal()
     jobSummaryChanged = Signal()
     statusTextChanged = Signal()
@@ -36,10 +43,17 @@ class AppController(QObject):
     def __init__(self, app_dir: Path, parent=None) -> None:
         super().__init__(parent)
         self._app_dir = app_dir
-        self._app_settings = AppSettings.load(app_dir / "appsettings.json")
+        settings_path = app_dir / "appsettings.json"
+        if getattr(sys, "frozen", False):
+            external_settings = Path(sys.executable).parent / "appsettings.json"
+            if external_settings.is_file():
+                settings_path = external_settings
+        self._app_settings = AppSettings.load(settings_path)
         self._preferences = QSettings()
+        saved_pins = self._preferences.value("pinnedFolders", [], list)
+        self._pinned_folders = list(dict.fromkeys(str(path) for path in saved_pins if path)) if isinstance(saved_pins, list) else []
         self._selection = SelectionManager()
-        self._folder_tree = FolderTreeModel(self._selection, self)
+        self._folder_tree = FolderTreeModel(self)
         self._file_list = FileListModel(self._selection, self)
         self._job_list = JobListModel(self)
 
@@ -51,14 +65,33 @@ class AppController(QObject):
         self._output_folder = str(Path(saved_output))
         self._conversion_mode = self._preferences.value("conversionMode", "pdf", str)
         self._image_format = self._preferences.value("imageFormat", "png", str)
-        self._preserve_structure = self._preferences.value("preserveStructure", True, bool)
+        self._pdf_conversion_method = self._preferences.value("pdfConversionMethod", "original", str)
+        if self._pdf_conversion_method not in {"original", "libreoffice"}:
+            self._pdf_conversion_method = "original"
         self._overwrite = self._preferences.value("overwrite", False, bool)
-        self._open_after_complete = self._preferences.value("openAfterComplete", False, bool)
+        default_columns = ["modified", "size", "type"]
+        saved_columns = self._preferences.value("fileListColumnOrder", default_columns, list)
+        self._column_order = [str(column) for column in saved_columns] if isinstance(saved_columns, list) else default_columns
+        if sorted(self._column_order) != sorted(default_columns):
+            self._column_order = default_columns
+        default_widths = {"name": 240, "type": 86, "size": 76, "modified": 130}
+        saved_widths = self._preferences.value("fileListColumnWidths", default_widths)
+        self._column_widths = dict(default_widths)
+        if isinstance(saved_widths, dict):
+            for column, width in saved_widths.items():
+                if column in self._column_widths:
+                    try:
+                        self._column_widths[column] = min(600, max(50, int(width)))
+                    except (TypeError, ValueError):
+                        continue
         self._busy = False
         self._status_text = "대기 중"
         self._worker: ConversionWorker | None = None
 
         self._folder_tree.folderActivated.connect(self._on_folder_activated)
+        self._file_list.folderActivated.connect(self._on_folder_activated)
+        self._folder_tree.set_quick_access(self._quick_access_entries())
+        self._folder_tree.set_current_path(self._file_list.folder)
         self._job_list.overallChanged.connect(self.jobSummaryChanged)
 
     # --------------------------- Models ---------------------------------
@@ -83,6 +116,42 @@ class AppController(QObject):
     def outputFolder(self) -> str:
         return self._output_folder
 
+    @Property("QVariantList", notify=quickAccessChanged)
+    def quickAccessFolders(self) -> list[dict]:
+        return self._quick_access_entries()
+
+    def _quick_access_entries(self) -> list[dict]:
+        folders = [{**entry, "canUnpin": False} for entry in FolderTreeModel.quick_access_folders()]
+        seen = {normalize_path(entry["path"]) for entry in folders if entry["path"]}
+        for path in self._pinned_folders:
+            key = normalize_path(path)
+            if key not in seen:
+                folders.append({
+                    "label": Path(path).name or path,
+                    "path": path,
+                    "icon": "folder",
+                    "iconSource": "image://filesystem/folder",
+                    "canUnpin": True,
+                })
+                seen.add(key)
+        return folders
+
+    @Property("QVariantList", notify=columnOrderChanged)
+    def fileListColumnOrder(self) -> list[str]:
+        return list(self._column_order)
+
+    @Property("QVariantMap", notify=columnOrderChanged)
+    def fileListColumnWidths(self) -> dict[str, int]:
+        return dict(self._column_widths)
+
+    @Property("QVariantList", notify=currentFolderChanged)
+    def currentBreadcrumbs(self) -> list[dict[str, str]]:
+        path = self._file_list.folder.absolute()
+        return [
+            {"label": ancestor.name or ancestor.anchor.rstrip("\\/") or ancestor.anchor, "path": str(ancestor)}
+            for ancestor in [*reversed(path.parents), path]
+        ]
+
     @Property(str, notify=conversionModeChanged)
     def conversionMode(self) -> str:
         return self._conversion_mode
@@ -91,17 +160,13 @@ class AppController(QObject):
     def imageFormat(self) -> str:
         return self._image_format
 
-    @Property(bool, notify=preserveStructureChanged)
-    def preserveStructure(self) -> bool:
-        return self._preserve_structure
+    @Property(str, notify=pdfConversionMethodChanged)
+    def pdfConversionMethod(self) -> str:
+        return self._pdf_conversion_method
 
     @Property(bool, notify=overwriteChanged)
     def overwrite(self) -> bool:
         return self._overwrite
-
-    @Property(bool, notify=openAfterCompleteChanged)
-    def openAfterComplete(self) -> bool:
-        return self._open_after_complete
 
     @Property(bool, notify=busyChanged)
     def busy(self) -> bool:
@@ -113,7 +178,7 @@ class AppController(QObject):
 
     @Property(str, notify=currentFolderChanged)
     def currentFolderSummary(self) -> str:
-        return f"문서 파일 {self._file_list.count}개"
+        return f"폴더 {self._file_list.folder_count}개 · 문서 파일 {self._file_list.count}개"
 
     @Property(str, notify=selectionSummaryChanged)
     def selectionSummary(self) -> str:
@@ -157,11 +222,40 @@ class AppController(QObject):
     def activateFolder(self, row: int) -> None:
         self._folder_tree.activate(row)
 
+    @Slot(str)
+    def navigateToFolder(self, path: str) -> None:
+        if path and Path(path).is_dir():
+            self._folder_tree.select_path(path)
+        else:
+            self.notify.emit("폴더 없음", "탐색할 폴더가 없습니다. 경로를 확인해 주세요.", "warning")
+
+    @Slot(str, str, result=bool)
+    def sameFolderPath(self, first: str, second: str) -> bool:
+        return bool(first and second) and normalize_path(first) == normalize_path(second)
+
+    @Slot(str)
+    def pinFolder(self, path: str) -> None:
+        if not path or not Path(path).is_dir():
+            return
+        if any(self.sameFolderPath(path, entry["path"]) for entry in self.quickAccessFolders):
+            return
+        self._pinned_folders.append(str(Path(path).absolute()))
+        self._preferences.setValue("pinnedFolders", self._pinned_folders)
+        self._folder_tree.set_quick_access(self._quick_access_entries())
+        self.quickAccessChanged.emit()
+
+    @Slot(str)
+    def unpinFolder(self, path: str) -> None:
+        remaining = [folder for folder in self._pinned_folders if not self.sameFolderPath(folder, path)]
+        if remaining != self._pinned_folders:
+            self._pinned_folders = remaining
+            self._preferences.setValue("pinnedFolders", self._pinned_folders)
+            self._folder_tree.set_quick_access(self._quick_access_entries())
+            self.quickAccessChanged.emit()
+
     @Slot(int)
-    def toggleFolderSelected(self, row: int) -> None:
-        self._folder_tree.toggle_checked(row)
-        self._file_list.refresh_checks()
-        self.selectionSummaryChanged.emit()
+    def openListedFolder(self, row: int) -> None:
+        self._file_list.activate_folder(row)
 
     @Slot(int)
     def toggleFileSelected(self, row: int) -> None:
@@ -176,12 +270,12 @@ class AppController(QObject):
     @Slot()
     def clearSelection(self) -> None:
         self._selection.clear()
-        self._folder_tree.refresh_checks()
         self._file_list.refresh_checks()
         self.selectionSummaryChanged.emit()
 
     @Slot()
     def refreshCurrentFolder(self) -> None:
+        self._folder_tree.refresh()
         self._file_list.reload()
         self.currentFolderChanged.emit()
 
@@ -189,7 +283,8 @@ class AppController(QObject):
     def chooseSourceFolder(self) -> None:
         folder = QFileDialog.getExistingDirectory(None, "탐색할 폴더 선택", self.currentFolder)
         if folder:
-            self._on_folder_activated(folder)
+            self.pinFolder(folder)
+            self._folder_tree.select_path(folder)
 
     @Slot()
     def chooseOutputFolder(self) -> None:
@@ -223,12 +318,33 @@ class AppController(QObject):
             self._preferences.setValue("imageFormat", value)
             self.imageFormatChanged.emit()
 
-    @Slot(bool)
-    def setPreserveStructure(self, value: bool) -> None:
-        if self._preserve_structure != value:
-            self._preserve_structure = value
-            self._preferences.setValue("preserveStructure", value)
-            self.preserveStructureChanged.emit()
+    @Slot(str)
+    def setPdfConversionMethod(self, method: str) -> None:
+        if method not in {"original", "libreoffice"} or self._busy or method == self._pdf_conversion_method:
+            return
+        self._pdf_conversion_method = method
+        self._preferences.setValue("pdfConversionMethod", method)
+        self.pdfConversionMethodChanged.emit()
+
+    @Slot("QVariantList")
+    def setFileListColumnOrder(self, order: list) -> None:
+        columns = [str(column) for column in order]
+        if sorted(columns) != ["modified", "size", "type"] or columns == self._column_order:
+            return
+        self._column_order = columns
+        self._preferences.setValue("fileListColumnOrder", columns)
+        self.columnOrderChanged.emit()
+
+    @Slot(str, int)
+    def setFileListColumnWidth(self, column: str, width: int) -> None:
+        if column not in self._column_widths:
+            return
+        clamped = min(600, max(50, width))
+        if clamped == self._column_widths[column]:
+            return
+        self._column_widths[column] = clamped
+        self._preferences.setValue("fileListColumnWidths", self._column_widths)
+        self.columnOrderChanged.emit()
 
     @Slot(bool)
     def setOverwrite(self, value: bool) -> None:
@@ -236,13 +352,6 @@ class AppController(QObject):
             self._overwrite = value
             self._preferences.setValue("overwrite", value)
             self.overwriteChanged.emit()
-
-    @Slot(bool)
-    def setOpenAfterComplete(self, value: bool) -> None:
-        if self._open_after_complete != value:
-            self._open_after_complete = value
-            self._preferences.setValue("openAfterComplete", value)
-            self.openAfterCompleteChanged.emit()
 
     @Slot()
     def startConversion(self) -> None:
@@ -274,7 +383,7 @@ class AppController(QObject):
                     source.path,
                     source.source_root,
                     output_root,
-                    self._preserve_structure,
+                    False,
                     self._overwrite,
                 )
             else:
@@ -284,7 +393,7 @@ class AppController(QObject):
                     source.source_root,
                     output_root,
                     suffix,
-                    self._preserve_structure,
+                    False,
                     self._overwrite,
                 )
                 destination = reserve_batch_file_path(destination, reserved_destinations)
@@ -302,7 +411,8 @@ class AppController(QObject):
         self._job_list.set_jobs(jobs)
         self._set_busy(True)
         self._set_status("변환 작업 진행 중")
-        self._worker = ConversionWorker(jobs, self._app_settings, self)
+        settings = replace(self._app_settings, prefer_libreoffice_pdf=self._pdf_conversion_method == "libreoffice")
+        self._worker = ConversionWorker(jobs, settings, self)
         self._worker.jobChanged.connect(self._on_job_changed)
         self._worker.jobFinished.connect(self._on_job_finished)
         self._worker.allFinished.connect(self._on_all_finished)
@@ -350,6 +460,7 @@ class AppController(QObject):
     # --------------------------- Internal --------------------------------
     def _on_folder_activated(self, folder: str) -> None:
         self._file_list.set_folder(folder)
+        self._folder_tree.set_current_path(self._file_list.folder)
         self.currentFolderChanged.emit()
 
     def _on_job_changed(self, job_id: str, status: str, progress: int, message: str) -> None:
@@ -366,8 +477,6 @@ class AppController(QObject):
         self._set_status("취소됨" if was_cancelled else "작업 완료")
         self._worker = None
         _, completed, failed, cancelled = self._job_list.counts()
-        if self._open_after_complete and completed:
-            self.openOutputFolder()
         if failed:
             self.notify.emit("변환 작업 완료", f"완료 {completed}개, 실패 {failed}개, 취소 {cancelled}개입니다.", "warning")
         else:

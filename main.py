@@ -10,8 +10,8 @@ from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtWidgets import QApplication
 
 from backend.app_controller import AppController
+from backend.file_icon_provider import FileIconProvider
 from backend.version import APP_VERSION
-
 
 if getattr(sys, "frozen", False):
     APP_DIR = Path(sys._MEIPASS)
@@ -38,6 +38,7 @@ def main() -> int:
     app.setWindowIcon(QIcon(str(APP_DIR / "assets" / "posid_logo.ico")))
 
     engine = QQmlApplicationEngine()
+    engine.addImageProvider("filesystem", FileIconProvider())
     controller = AppController(app_dir=APP_DIR)
     engine.rootContext().setContextProperty("appController", controller)
 
