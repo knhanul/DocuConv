@@ -4,17 +4,19 @@ import sys
 from dataclasses import replace
 from pathlib import Path
 
-from PySide6.QtCore import Property, QObject, QSettings, QUrl, Signal, Slot
+from PySide6.QtCore import Property, QObject, QSettings, QStandardPaths, QUrl, Signal, Slot
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QFileDialog
 
 from backend.file_list_model import FileListModel
 from backend.file_types import target_extensions
 from backend.folder_tree_model import FolderTreeModel
+from backend.history_model import HistoryModel
 from backend.job_model import ConversionJob, JobListModel
 from backend.path_utils import (
     normalize_path,
     output_file_path,
+    output_image_directory,
     reserve_batch_file_path,
 )
 from backend.selection_manager import SelectionManager
@@ -55,10 +57,13 @@ class AppController(QObject):
         self._file_list = FileListModel(self._selection, self)
         self._job_list = JobListModel(self)
 
+        app_data = Path(QStandardPaths.writableLocation(QStandardPaths.AppLocalDataLocation))
+        self._history = HistoryModel(app_data / "history.json", self._app_settings.max_history_items, self)
+
         default_output = Path.home() / "Documents" / "POSID 변환결과"
         saved_output = self._preferences.value("outputFolder", str(default_output), str)
         self._output_folder = str(Path(saved_output))
-        self._conversion_mode = "pdf"
+        self._conversion_mode = self._preferences.value("conversionMode", "pdf", str)
         self._image_format = self._preferences.value("imageFormat", "png", str)
         self._pdf_conversion_method = self._preferences.value("pdfConversionMethod", "original", str)
         if self._pdf_conversion_method not in {"original", "libreoffice"}:
@@ -101,6 +106,10 @@ class AppController(QObject):
     @Property(QObject, constant=True)
     def jobListModel(self):
         return self._job_list
+
+    @Property(QObject, constant=True)
+    def historyModel(self):
+        return self._history
 
     # --------------------------- Properties -----------------------------
     @Property(str, notify=outputFolderChanged)
@@ -300,7 +309,7 @@ class AppController(QObject):
 
     @Slot(str)
     def setConversionMode(self, mode: str) -> None:
-        if mode != "pdf" or self._busy:
+        if mode not in {"hwpx", "pdf", "image"} or self._busy:
             return
         if self._conversion_mode != mode:
             self._conversion_mode = mode
@@ -363,30 +372,46 @@ class AppController(QObject):
             self.notify.emit("출력 폴더 오류", f"출력 폴더를 만들 수 없습니다.\n{exc}", "error")
             return
 
-        sources = self._selection.enumerate_sources(target_extensions("pdf"))
+        sources = self._selection.enumerate_sources(target_extensions(self._conversion_mode))
         if not sources:
-            self.notify.emit("변환할 파일 없음", "PDF로 변환할 문서를 선택해 주세요.", "warning")
+            self.notify.emit("변환할 파일 없음", "현재 변환 형식에 맞는 파일을 선택해 주세요.", "warning")
+            return
+        if self._conversion_mode == "image" and len(sources) != 1:
+            self.notify.emit("이미지 변환 선택 제한", "이미지 변환은 문서 파일을 한 개만 선택할 수 있습니다.", "warning")
+            return
+        if self._conversion_mode == "hwpx" and sys.platform != "win32":
+            self.notify.emit("Windows 환경 필요", "HWPX 변환은 한글 프로그램의 Windows COM 자동화가 필요합니다.", "error")
             return
 
         jobs: list[ConversionJob] = []
         reserved_destinations: set[str] = set()
         for source in sources:
-            destination = output_file_path(
-                source.path,
-                source.source_root,
-                output_root,
-                ".pdf",
-                False,
-                self._overwrite,
-            )
-            destination = reserve_batch_file_path(destination, reserved_destinations)
+            if self._conversion_mode == "image":
+                destination = output_image_directory(
+                    source.path,
+                    source.source_root,
+                    output_root,
+                    False,
+                    self._overwrite,
+                )
+            else:
+                suffix = ".hwpx" if self._conversion_mode == "hwpx" else ".pdf"
+                destination = output_file_path(
+                    source.path,
+                    source.source_root,
+                    output_root,
+                    suffix,
+                    False,
+                    self._overwrite,
+                )
+                destination = reserve_batch_file_path(destination, reserved_destinations)
             reserved_destinations.add(normalize_path(destination))
             jobs.append(
                 ConversionJob(
                     input_path=source.path,
                     output_path=destination,
                     source_root=source.source_root,
-                    mode="pdf",
+                    mode=self._conversion_mode,
                     image_format=self._image_format,
                 )
             )
@@ -397,6 +422,7 @@ class AppController(QObject):
         settings = replace(self._app_settings, prefer_libreoffice_pdf=self._pdf_conversion_method == "libreoffice")
         self._worker = ConversionWorker(jobs, settings, self)
         self._worker.jobChanged.connect(self._on_job_changed)
+        self._worker.jobFinished.connect(self._on_job_finished)
         self._worker.allFinished.connect(self._on_all_finished)
         self._worker.start()
 
@@ -421,6 +447,10 @@ class AppController(QObject):
         if not self._busy:
             self._job_list.clear()
 
+    @Slot()
+    def clearHistory(self) -> None:
+        self._history.clear()
+
     @Slot(str)
     def openPath(self, path: str) -> None:
         if not path:
@@ -443,6 +473,12 @@ class AppController(QObject):
 
     def _on_job_changed(self, job_id: str, status: str, progress: int, message: str) -> None:
         self._job_list.update(job_id, status=status, progress=progress, message=message)
+
+    def _on_job_finished(self, job_id: str) -> None:
+        found = self._job_list.find(job_id)
+        if found:
+            _, job = found
+            self._history.append_job(job)
 
     def _on_all_finished(self, was_cancelled: bool) -> None:
         self._set_busy(False)

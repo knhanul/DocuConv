@@ -245,7 +245,7 @@ ApplicationWindow {
                         font.family: Theme.fontFamily
                     }
                     Label {
-                        text: "HWP/HWPX와 Office 문서를 PDF로 변환합니다."
+                        text: "HWP/HWPX와 Office 문서를 HWPX, PDF, 이미지로 변환합니다."
                         color: Theme.inkSecondary
                         font.pixelSize: 12
                         font.family: Theme.fontFamily
@@ -299,12 +299,18 @@ ApplicationWindow {
 
                     NavButton {
                         iconKind: "files"
-                        text: "PDF 생성"
-                        selected: true
+                        text: "파일 탐색"
+                        selected: window.currentPage === 0
                         onClicked: window.currentPage = 0
                     }
+                    NavButton {
+                        iconKind: "history"
+                        text: "작업 이력"
+                        selected: window.currentPage === 1
+                        onClicked: window.currentPage = 1
+                    }
 
-                    Item { width: 1; height: Math.max(0, window.height - 88 - 92 - 52) }
+                    Item { width: 1; height: Math.max(0, window.height - 88 - 184 - 52) }
                     Rectangle {
                         width: 100
                         height: 1
@@ -326,8 +332,9 @@ ApplicationWindow {
             StackLayout {
                 Layout.fillWidth: true
                 Layout.fillHeight: true
-                currentIndex: 0
+                currentIndex: window.currentPage
                 ConverterPage {}
+                HistoryPage {}
             }
         }
     }

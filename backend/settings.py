@@ -14,6 +14,7 @@ class AppSettings:
     office_visible: bool = False
     image_dpi: int = 150
     jpeg_quality: int = 92
+    max_history_items: int = 500
     libreoffice_path: str = ""
     libreoffice_hwp_profile: str = ""
     prefer_libreoffice_pdf: bool = False
@@ -33,6 +34,7 @@ class AppSettings:
             office_visible=bool(raw.get("officeVisible", False)),
             image_dpi=max(72, min(600, int(raw.get("imageDpi", 150)))),
             jpeg_quality=max(50, min(100, int(raw.get("jpegQuality", 92)))),
+            max_history_items=max(50, int(raw.get("maxHistoryItems", 500))),
             libreoffice_path=str(raw.get("libreOfficePath", "")),
             libreoffice_hwp_profile=str(raw.get("libreOfficeHwpProfile", "")),
         )

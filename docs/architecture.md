@@ -6,6 +6,7 @@ QML UI
       ├─ FolderTreeModel
       ├─ FileListModel
       ├─ JobListModel
+      ├─ HistoryModel
       ├─ SelectionManager
       └─ ConversionWorker (QThread)
           └─ ConverterRegistry

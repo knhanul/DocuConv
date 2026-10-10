@@ -1,6 +1,6 @@
 POSID Document Converter QML Source Inventory
 Generated: 2026-07-28T06:40:28.006676+00:00
-Files: 55
+Files: 56
 
 cffab36a7f6dcff39a9cd9aaf09736c22d9db832555e5dd7d1cad1d5e59e7b75         119  .gitignore
 cde784f5554f46a014a8bb5ad63c3270dcfc392ef987b5e22235980e1ae45ca2        5005  README.md
@@ -13,6 +13,7 @@ e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855           0  ba
 09dda81eebdf75671cf533243cf55a75ba3e3b6303c3ff80ca1f2fdbb189b042        4454  backend/file_list_model.py
 167af4911e032852395881b84ff1eec08684f4ecb11a06140066f9eb53c4a2b2        1296  backend/file_types.py
 28b2cd52bd8cedd4ed4d051ee39c23d94d6577e5de61b0d305e3b1ed28e291d9        5766  backend/folder_tree_model.py
+7e11909697461fd703cfeb65871ad9edfeb152403148fc2a073c5139f456395f        3401  backend/history_model.py
 d79a1c9d862f4254003775335999cf29b309a39ba57af0b2c4210db1d820665a        5067  backend/job_model.py
 c04a70143613b00b67177998c70c1dcf8cefacac50be23b52485cc13f133f592        3036  backend/path_utils.py
 86514df4f0f7af2c6599029f4449ed343060ae4068cd579abf142d7d51ae7218        4996  backend/selection_manager.py
