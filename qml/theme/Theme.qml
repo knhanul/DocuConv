@@ -2,7 +2,7 @@ pragma Singleton
 import QtQuick
 
 QtObject {
-    // 우체국금융개발원 CI. 심벌 그라데이션 원색은 공식 SVG 기준.
+    // PoSID CI. 심벌 그라데이션 원색은 공식 SVG 기준.
     readonly property color gold: "#FAA619"
     readonly property color orange: "#F5821F"
     readonly property color red: "#E22A26"

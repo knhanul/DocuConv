@@ -122,7 +122,7 @@ ApplicationWindow {
                 }
 
                 Label {
-                    text: "우체국금융개발원 우정정보관리원 AI킥오프모임"
+                    text: "우정정보관리원 AI킥오프모임"
                     color: Theme.ink
                     font.pixelSize: 15
                     font.bold: true
