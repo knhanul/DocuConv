@@ -6,28 +6,23 @@
 
 ## 주요 기능
 
-- Windows 탐색기와 유사한 폴더 트리 및 파일 목록
+- Windows 탐색기와 유사한 폴더 트리 및 파일 목록에서 문서를 고른 뒤 PDF로 변환
 - 폴더 전체 또는 개별 파일 체크 선택
-- HWP → HWPX 일괄 변환
 - HWP/HWPX 및 Word·Excel·PowerPoint 문서 → PDF 변환
-- PDF 1개 → 페이지별 PNG/JPG/TIFF 변환
 - 출력 폴더 지정, 출력 폴더 바로가기, 중복 파일명 자동 처리
 - 순차 변환 작업 큐, 파일별/전체 진행률, 취소, 오류 후 다음 작업 계속
-- 작업 이력 저장 및 결과 폴더 열기
 - 공식 CI(심벌·시그니처, PoSID Orange `#F5821F` / PoSID Red `#E22A26`)를 기준으로 맞춘 업무용 화면
 
 ## 지원 형식
 
 | 기능 | 입력 | 출력 | 필요한 데스크톱 프로그램 |
 |---|---|---|---|
-| HWPX 변환 | HWP | HWPX | 한컴오피스 한글 |
-| PDF 변환 | HWP, HWPX | PDF | 한컴오피스 한글 우선, 없으면 LibreOffice + H2Orestart + Java |
-| PDF 변환 | DOC, DOCX, DOCM, DOT, DOTX, RTF, ODT | PDF | Microsoft Word 우선, 없으면 LibreOffice |
-| PDF 변환 | XLS, XLSX, XLSM, XLSB, CSV | PDF | Microsoft Excel 우선, 없으면 LibreOffice |
-| PDF 변환 | PPT, PPTX, PPTM, PPS, PPSX | PDF | Microsoft PowerPoint 우선, 없으면 LibreOffice |
-| 이미지 변환 | PDF만 | PNG/JPG/TIFF | 불필요 (pypdfium2로 직접 렌더링) |
+| PDF 생성 | HWP, HWPX | PDF | 한컴오피스 한글 우선, 없으면 LibreOffice + H2Orestart + Java |
+| PDF 생성 | DOC, DOCX, DOCM, DOT, DOTX, RTF, ODT | PDF | Microsoft Word 우선, 없으면 LibreOffice |
+| PDF 생성 | XLS, XLSX, XLSM, XLSB, CSV | PDF | Microsoft Excel 우선, 없으면 LibreOffice |
+| PDF 생성 | PPT, PPTX, PPTM, PPS, PPSX | PDF | Microsoft PowerPoint 우선, 없으면 LibreOffice |
 
-> **중요:** HWP → HWPX는 여전히 한컴오피스 한글이 필요합니다. 대체 엔진은 PDF 변환 및 문서 → 이미지 변환에 적용됩니다. LibreOffice는 원본과 글꼴·레이아웃·페이지 구성이 다를 수 있고, 암호화 문서나 일부 형식은 변환되지 않을 수 있습니다.
+> **중요:** LibreOffice는 원본과 글꼴·레이아웃·페이지 구성이 다를 수 있고, 암호화 문서나 일부 형식은 변환되지 않을 수 있습니다.
 
 ## 폴더 구조
 
@@ -157,7 +152,7 @@ LibreOffice, Java, H2Orestart는 자동 다운로드하거나 EXE에 내장하�
 ## 참고 설계 원칙
 
 - QML은 화면과 사용자 상호작용만 담당합니다.
-- 파일 탐색, 선택 상태, 작업 큐, 변환 및 이력은 Python 백엔드가 담당합니다.
+- 파일 탐색, 선택 상태, 작업 큐, PDF 변환은 Python 백엔드가 담당합니다.
 - COM은 별도 작업 스레드에서 초기화하고, 파일 하나씩 순차 처리합니다.
 - 각 문서 프로그램 인스턴스와 문서는 `finally`에서 닫아 백그라운드 프로세스 잔류를 줄입니다.
 - 원본 파일은 수정하거나 삭제하지 않습니다.

@@ -110,53 +110,20 @@ Item {
 
                 SectionCard {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 294
-                    title: "변환 설정"
+                    Layout.preferredHeight: 148
+                    title: "PDF 생성"
 
                     ColumnLayout {
                         anchors.fill: parent
                         spacing: 10
 
-                        RowLayout {
+                        Label {
                             Layout.fillWidth: true
-                            Layout.preferredHeight: 146
-                            Layout.maximumHeight: 146
-                            spacing: 9
-
-                            TargetCard {
-                                Layout.fillWidth: true
-                                Layout.fillHeight: true
-                                title: "HWPX 변환"
-                                subtitle: "HWP → HWPX"
-                                iconText: "HWP"
-                                accentColor: Theme.red
-                                selected: appController.conversionMode === "hwpx"
-                                notice: "HWPX 변환은 한글 프로그램이 설치된 Windows 환경에서만 사용할 수 있습니다."
-                                onClicked: appController.setConversionMode("hwpx")
-                            }
-                            TargetCard {
-                                Layout.fillWidth: true
-                                Layout.fillHeight: true
-                                title: "PDF 변환"
-                                subtitle: "HWP/HWPX · Word · Excel · PowerPoint → PDF"
-                                iconText: "PDF"
-                                accentColor: "#C2410C"
-                                selected: appController.conversionMode === "pdf"
-                                chips: ["HWP", "HWPX", "DOCX", "XLSX", "PPTX"]
-                                onClicked: appController.setConversionMode("pdf")
-                            }
-                            TargetCard {
-                                Layout.fillWidth: true
-                                Layout.fillHeight: true
-                                title: "이미지 변환"
-                                subtitle: "PDF 1개 → 페이지별 이미지"
-                                iconText: "IMG"
-                                accentColor: "#A16207"
-                                selected: appController.conversionMode === "image"
-                                chips: ["PNG", "JPG", "TIFF"]
-                                notice: "이미지 변환은 한 번에 문서 한 개만 선택할 수 있습니다."
-                                onClicked: appController.setConversionMode("image")
-                            }
+                            text: "HWP/HWPX · Word · Excel · PowerPoint 문서를 PDF로 변환합니다."
+                            color: Theme.inkSecondary
+                            font.pixelSize: 12
+                            font.family: Theme.fontFamily
+                            wrapMode: Text.WordWrap
                         }
 
                         RowLayout {
@@ -205,7 +172,6 @@ Item {
                                 Layout.preferredWidth: 74
                             }
                             RowLayout {
-                                visible: appController.conversionMode === "pdf"
                                 spacing: 8
                                 Label { text: "변환 방식"; color: Theme.inkSecondary; font.family: Theme.fontFamily }
                                 ComboBox {
@@ -230,17 +196,6 @@ Item {
                                         verticalAlignment: Text.AlignVCenter
                                         elide: Text.ElideRight
                                     }
-                                }
-                            }
-                            RowLayout {
-                                visible: appController.conversionMode === "image"
-                                spacing: 8
-                                Label { text: "이미지 형식"; color: Theme.inkSecondary; font.family: Theme.fontFamily }
-                                ComboBox {
-                                    model: ["PNG", "JPG", "TIFF"]
-                                    currentIndex: appController.imageFormat === "png" ? 0 : appController.imageFormat === "jpg" ? 1 : 2
-                                    onActivated: appController.setImageFormat(currentText.toLowerCase())
-                                    font.family: Theme.fontFamily
                                 }
                             }
                             CheckBox {
@@ -322,7 +277,7 @@ Item {
                             variant: "primary"
                             Layout.preferredWidth: 156
                             Layout.fillHeight: true
-                            text: "변환 시작"
+                            text: "PDF 생성 시작"
                             font.pixelSize: 15
                             onClicked: appController.startConversion()
                         }

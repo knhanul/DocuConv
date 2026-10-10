@@ -12,7 +12,6 @@ import backend.app_controller as controller_module
 from backend.app_controller import AppController
 from backend.file_icon_provider import FileIconProvider
 from backend.folder_tree_model import FolderTreeModel
-from backend.history_model import HistoryModel
 from backend.selection_manager import SelectionManager
 
 
@@ -138,7 +137,6 @@ def controller(tmp_path, monkeypatch, application):
     preferences = Mock()
     preferences.value.side_effect = lambda key, default, value_type=None: default
     monkeypatch.setattr(controller_module, "QSettings", lambda: preferences)
-    monkeypatch.setattr(controller_module, "HistoryModel", lambda path, max_items, parent: HistoryModel(tmp_path / "history.json", max_items, parent))
     monkeypatch.setattr(FolderTreeModel, "_build_roots", lambda self: [])
     instance = AppController(tmp_path)
     instance._output_folder = str(tmp_path / "out")
@@ -723,8 +721,6 @@ def test_full_application_qml_still_loads(controller, application):
     controller.setPdfConversionMethod("libreoffice")
     QTest.qWait(20)
     assert pdf_method.property("currentIndex") == 1
-    controller.setConversionMode("image")
-    assert not pdf_method.parentItem().property("visible")
     assert not [warning for warning in warnings if "FolderTreePanel.qml" in warning or "FileListPanel.qml" in warning]
     window.close()
     window.deleteLater()
