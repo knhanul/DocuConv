@@ -208,7 +208,7 @@ Item {
                                 visible: appController.conversionMode === "pdf"
                                 spacing: 8
                                 Label { text: "변환 방식"; color: Theme.inkSecondary; font.family: Theme.fontFamily }
-                                ComboBox {
+                                AppComboBox {
                                     id: pdfMethodCombo
                                     objectName: "pdfConversionMethodCombo"
                                     Layout.fillWidth: true
@@ -236,7 +236,8 @@ Item {
                                 visible: appController.conversionMode === "image"
                                 spacing: 8
                                 Label { text: "이미지 형식"; color: Theme.inkSecondary; font.family: Theme.fontFamily }
-                                ComboBox {
+                                AppComboBox {
+                                    objectName: "imageFormatCombo"
                                     model: ["PNG", "JPG", "TIFF"]
                                     currentIndex: appController.imageFormat === "png" ? 0 : appController.imageFormat === "jpg" ? 1 : 2
                                     onActivated: appController.setImageFormat(currentText.toLowerCase())
