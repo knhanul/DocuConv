@@ -1,6 +1,7 @@
 import QtQuick
 import QtQuick.Controls
 import QtQuick.Layouts
+import "../theme"
 
 Rectangle {
     id: root
@@ -9,9 +10,9 @@ Rectangle {
     property bool showTitle: title.length > 0
     property int padding: 14
 
-    color: "#FFFFFF"
-    radius: 6
-    border.color: "#D8E0EC"
+    color: Theme.surface
+    radius: Theme.radius
+    border.color: Theme.line
     border.width: 1
 
     ColumnLayout {
@@ -19,13 +20,24 @@ Rectangle {
         anchors.margins: root.padding
         spacing: 10
 
-        Label {
+        RowLayout {
             visible: root.showTitle
-            text: root.title
-            color: "#17243A"
-            font.pixelSize: 16
-            font.bold: true
             Layout.fillWidth: true
+            spacing: 8
+            Rectangle {
+                Layout.preferredWidth: 3
+                Layout.preferredHeight: 14
+                radius: 1
+                color: Theme.red
+            }
+            Label {
+                text: root.title
+                color: Theme.ink
+                font.pixelSize: 15
+                font.bold: true
+                font.family: Theme.fontFamily
+                Layout.fillWidth: true
+            }
         }
 
         Item {

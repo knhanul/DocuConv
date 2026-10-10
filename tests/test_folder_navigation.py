@@ -376,7 +376,7 @@ def test_qml_folder_icon_and_name_navigate_without_expanding_or_selecting(panel,
     assert controller.currentFolder == str(source)
     assert not row.property("expanded")
     assert row.property("activeFolder")
-    assert row.property("color").name().upper() == "#E9E9E9"
+    assert row.property("color").name().upper() == "#FFF4EE"
     assert row.property("radius") > 0
     assert warnings == []
 

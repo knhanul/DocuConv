@@ -4,6 +4,7 @@ import QtQuick.Layouts
 import QtQuick.Window
 import "components"
 import "pages"
+import "theme"
 
 ApplicationWindow {
     id: window
@@ -13,8 +14,20 @@ ApplicationWindow {
     minimumHeight: 760
     visible: true
     title: "포시드 문서 변환기"
-    color: "#F4F7FB"
-    font.family: "Malgun Gothic"
+    color: Theme.canvas
+    font.family: Theme.fontFamily
+    font.pixelSize: 13
+
+    palette.highlight: Theme.red
+    palette.highlightedText: "white"
+    palette.accent: Theme.red
+    palette.window: Theme.canvas
+    palette.windowText: Theme.ink
+    palette.base: Theme.surface
+    palette.text: Theme.ink
+    palette.button: Theme.surface
+    palette.buttonText: Theme.ink
+    palette.mid: Theme.line
 
     property int currentPage: 0
 
@@ -23,15 +36,39 @@ ApplicationWindow {
         property string level: "info"
         modal: true
         anchors.centerIn: parent
-        width: 430
+        width: 440
+        padding: 0
         title: "안내"
         standardButtons: Dialog.Ok
-        contentItem: Label {
-            text: messageDialogText.text
-            color: "#25364E"
-            font.pixelSize: 13
-            wrapMode: Text.WordWrap
-            padding: 16
+
+        background: Rectangle {
+            color: Theme.surface
+            border.color: Theme.line
+            border.width: 1
+            radius: Theme.radius
+        }
+
+        contentItem: ColumnLayout {
+            spacing: 0
+            Rectangle {
+                Layout.fillWidth: true
+                Layout.preferredHeight: 4
+                gradient: Gradient {
+                    orientation: Gradient.Horizontal
+                    GradientStop { position: 0.0; color: Theme.gold }
+                    GradientStop { position: 0.48; color: Theme.orange }
+                    GradientStop { position: 1.0; color: Theme.red }
+                }
+            }
+            Label {
+                Layout.fillWidth: true
+                Layout.margins: 18
+                text: messageDialogText.text
+                color: Theme.ink
+                font.pixelSize: 13
+                font.family: Theme.fontFamily
+                wrapMode: Text.WordWrap
+            }
         }
         Text { id: messageDialogText; visible: false }
     }
@@ -41,76 +78,103 @@ ApplicationWindow {
         modal: true
         anchors.centerIn: parent
         width: 520
+        padding: 0
         title: "버전 정보"
         standardButtons: Dialog.Ok
 
         background: Rectangle {
-            color: "#FFFFFF"
-            border.color: "#E2E7EE"
+            color: Theme.surface
+            border.color: Theme.line
             border.width: 1
-            radius: 8
+            radius: Theme.radius
         }
 
         contentItem: ColumnLayout {
-            spacing: 16
-            Layout.fillWidth: true
-
-            Image {
-                source: appController.aiResearchImagePath
-                Layout.fillWidth: true
-                Layout.preferredHeight: 280
-                fillMode: Image.PreserveAspectFit
-                smooth: true
-                Layout.alignment: Qt.AlignHCenter
-            }
-
-            Label {
-                text: "우체국금융개발원 우정정보관리원 AI킥오프모임"
-                color: "#13223A"
-                font.pixelSize: 16
-                font.bold: true
-                Layout.alignment: Qt.AlignHCenter
-            }
+            spacing: 0
 
             Rectangle {
                 Layout.fillWidth: true
-                Layout.preferredHeight: 1
-                color: "#E2E7EE"
-            }
-
-            RowLayout {
-                Layout.fillWidth: true
-                spacing: 8
-
-                Label {
-                    text: "버전"
-                    color: "#71819A"
-                    font.pixelSize: 13
-                    Layout.preferredWidth: 80
-                }
-                Label {
-                    text: appController.appVersion
-                    color: "#25364E"
-                    font.pixelSize: 13
-                    font.bold: true
+                Layout.preferredHeight: 92
+                color: Theme.sidebar
+                Image {
+                    anchors.centerIn: parent
+                    width: 168
+                    height: 80
+                    source: appController.signatureWhitePath
+                    fillMode: Image.PreserveAspectFit
+                    smooth: true
+                    mipmap: true
                 }
             }
 
-            RowLayout {
+            ColumnLayout {
                 Layout.fillWidth: true
-                spacing: 8
+                Layout.margins: 18
+                spacing: 14
+
+                Image {
+                    source: appController.aiResearchImagePath
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 240
+                    fillMode: Image.PreserveAspectFit
+                    smooth: true
+                    Layout.alignment: Qt.AlignHCenter
+                }
 
                 Label {
-                    text: "빌드 날짜"
-                    color: "#71819A"
-                    font.pixelSize: 13
-                    Layout.preferredWidth: 80
-                }
-                Label {
-                    text: appController.buildDate
-                    color: "#25364E"
-                    font.pixelSize: 13
+                    text: "우체국금융개발원 우정정보관리원 AI킥오프모임"
+                    color: Theme.ink
+                    font.pixelSize: 15
                     font.bold: true
+                    font.family: Theme.fontFamily
+                    Layout.alignment: Qt.AlignHCenter
+                    horizontalAlignment: Text.AlignHCenter
+                    wrapMode: Text.WordWrap
+                    Layout.fillWidth: true
+                }
+
+                Rectangle {
+                    Layout.fillWidth: true
+                    Layout.preferredHeight: 1
+                    color: Theme.line
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 8
+                    Label {
+                        text: "버전"
+                        color: Theme.muted
+                        font.pixelSize: 13
+                        font.family: Theme.fontFamily
+                        Layout.preferredWidth: 80
+                    }
+                    Label {
+                        text: appController.appVersion
+                        color: Theme.ink
+                        font.pixelSize: 13
+                        font.bold: true
+                        font.family: Theme.fontFamily
+                    }
+                }
+
+                RowLayout {
+                    Layout.fillWidth: true
+                    spacing: 8
+                    Label {
+                        text: "빌드 날짜"
+                        color: Theme.muted
+                        font.pixelSize: 13
+                        font.family: Theme.fontFamily
+                        Layout.preferredWidth: 80
+                    }
+                    Label {
+                        text: appController.buildDate
+                        color: Theme.ink
+                        font.pixelSize: 13
+                        font.bold: true
+                        font.family: Theme.fontFamily
+                    }
                 }
             }
         }
@@ -132,37 +196,59 @@ ApplicationWindow {
 
         Rectangle {
             Layout.fillWidth: true
+            Layout.preferredHeight: 4
+            gradient: Gradient {
+                orientation: Gradient.Horizontal
+                GradientStop { position: 0.0; color: Theme.gold }
+                GradientStop { position: 0.48; color: Theme.orange }
+                GradientStop { position: 1.0; color: Theme.red }
+            }
+        }
+
+        Rectangle {
+            Layout.fillWidth: true
             Layout.preferredHeight: 84
-            color: "#FFFFFF"
-            border.color: "#E2E7EE"
+            color: Theme.surface
+            border.color: Theme.line
             border.width: 1
 
             RowLayout {
                 anchors.fill: parent
-                anchors.leftMargin: 20
-                anchors.rightMargin: 20
-                spacing: 15
+                anchors.leftMargin: 18
+                anchors.rightMargin: 16
+                spacing: 14
 
                 Image {
-                    source: appController.logoPath
-                    Layout.preferredWidth: 50
-                    Layout.preferredHeight: 50
+                    source: appController.signaturePath
+                    Layout.preferredWidth: 148
+                    Layout.preferredHeight: 70
                     fillMode: Image.PreserveAspectFit
                     smooth: true
+                    mipmap: true
+                    Layout.alignment: Qt.AlignVCenter
                 }
+
+                Rectangle {
+                    Layout.preferredWidth: 1
+                    Layout.preferredHeight: 40
+                    color: Theme.line
+                }
+
                 ColumnLayout {
                     Layout.fillWidth: true
-                    spacing: 3
+                    spacing: 2
                     Label {
-                        text: "포시드 문서 변환기"
-                        color: "#13223A"
-                        font.pixelSize: 25
+                        text: "문서 변환기"
+                        color: Theme.ink
+                        font.pixelSize: 22
                         font.bold: true
+                        font.family: Theme.fontFamily
                     }
                     Label {
-                        text: "HWP/HWPX 및 Office 문서를 HWPX, PDF, 이미지로 변환합니다."
-                        color: "#71819A"
-                        font.pixelSize: 13
+                        text: "HWP/HWPX와 Office 문서를 HWPX, PDF, 이미지로 변환합니다."
+                        color: Theme.inkSecondary
+                        font.pixelSize: 12
+                        font.family: Theme.fontFamily
                     }
                 }
 
@@ -172,18 +258,24 @@ ApplicationWindow {
                     Layout.preferredWidth: 36
                     Layout.preferredHeight: 36
                     Layout.alignment: Qt.AlignVCenter
+                    Accessible.name: "버전 정보"
 
-                    contentItem: Label {
-                        text: "ⓘ"
-                        color: parent.hovered ? "#13223A" : "#71819A"
-                        font.pixelSize: 22
+                    contentItem: Text {
+                        text: "i"
+                        color: parent.hovered ? Theme.red : Theme.inkSecondary
+                        font.pixelSize: 16
+                        font.bold: true
+                        font.family: "Times New Roman"
+                        font.italic: true
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
                     }
 
                     background: Rectangle {
-                        color: parent.hovered ? "#F4F7FB" : "transparent"
+                        color: parent.hovered ? Theme.accentSoft : "transparent"
                         radius: 18
+                        border.color: parent.hovered ? Theme.accentLine : Theme.line
+                        border.width: 1
                     }
 
                     onClicked: aboutDialog.open()
@@ -197,36 +289,42 @@ ApplicationWindow {
             spacing: 0
 
             Rectangle {
-                Layout.preferredWidth: 94
+                Layout.preferredWidth: 100
                 Layout.fillHeight: true
-                color: "#203147"
+                color: Theme.sidebar
 
                 Column {
                     anchors.fill: parent
                     spacing: 0
 
                     NavButton {
-                        iconText: "▰"
+                        iconKind: "files"
                         text: "파일 탐색"
                         selected: window.currentPage === 0
                         onClicked: window.currentPage = 0
                     }
                     NavButton {
-                        iconText: "▤"
+                        iconKind: "history"
                         text: "작업 이력"
                         selected: window.currentPage === 1
                         onClicked: window.currentPage = 1
                     }
 
-                    Item { width: 1; height: Math.max(0, window.height - 84 - 208 - 44) }
+                    Item { width: 1; height: Math.max(0, window.height - 88 - 184 - 52) }
+                    Rectangle {
+                        width: 100
+                        height: 1
+                        color: "#3A3C3F"
+                    }
                     Label {
-                        width: 94
-                        height: 44
+                        width: 100
+                        height: 40
                         text: "v" + appController.appVersion
-                        color: "#CED7E3"
+                        color: Theme.sidebarMuted
                         horizontalAlignment: Text.AlignHCenter
                         verticalAlignment: Text.AlignVCenter
                         font.pixelSize: 11
+                        font.family: Theme.fontFamily
                     }
                 }
             }

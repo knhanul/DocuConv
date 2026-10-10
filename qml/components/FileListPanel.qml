@@ -4,6 +4,7 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Basic as Basic
 import QtQuick.Layouts
+import "../theme"
 
 Rectangle {
     id: root
@@ -17,10 +18,10 @@ Rectangle {
         "size":     { "title": "크기" },
         "modified": { "title": "수정한 날짜" }
     })
-    color: "#FFFFFF"
-    border.color: "#D8E0EC"
+    color: Theme.surface
+    border.color: Theme.line
     border.width: 1
-    radius: 4
+    radius: Theme.radius
 
     ColumnLayout {
         anchors.fill: parent
@@ -29,7 +30,7 @@ Rectangle {
         Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: 46
-            color: "#FFFFFF"
+            color: Theme.surface
             RowLayout {
                 anchors.fill: parent
                 anchors.leftMargin: 12
@@ -50,12 +51,12 @@ Rectangle {
             }
         }
 
-        Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: "#E1E7F0" }
+        Rectangle { Layout.fillWidth: true; Layout.preferredHeight: 1; color: Theme.line }
 
         Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: 36
-            color: "#F8FAFD"
+            color: Theme.surfaceMuted
             clip: true
             RowLayout {
                 x: 10 - fileView.contentX
@@ -86,10 +87,10 @@ Rectangle {
                             anchors.horizontalCenter: parent.horizontalCenter
                             anchors.verticalCenter: parent.verticalCenter
                             spacing: 3
-                            Label { text: columnHeader.title; color: "#53657E"; font.bold: true; font.pixelSize: 12 }
+                            Label { text: columnHeader.title; color: Theme.muted; font.bold: true; font.pixelSize: 12; font.family: Theme.fontFamily }
                             Label {
                                 text: root.controller.fileListModel.sortAscending ? "▲" : "▼"
-                                color: "#53657E"
+                                color: Theme.muted
                                 font.pixelSize: 9
                                 visible: root.controller.fileListModel.sortColumn === columnHeader.column
                             }
@@ -131,7 +132,7 @@ Rectangle {
                         width: 2
                         height: 16
                         visible: columnHeader.resizable
-                        color: selfResizeMouse.containsMouse || selfResizeMouse.pressed ? "#9FB4D0" : "#D8E0EC"
+                        color: selfResizeMouse.containsMouse || selfResizeMouse.pressed ? Theme.wordmark : Theme.line
                     }
                     MouseArea {
                         id: selfResizeMouse
@@ -187,7 +188,7 @@ Rectangle {
                                 anchors.verticalCenter: parent.verticalCenter
                                 width: 2
                                 height: 16
-                                color: resizeMouse.containsMouse || resizeMouse.pressed ? "#9FB4D0" : "#D8E0EC"
+                                color: resizeMouse.containsMouse || resizeMouse.pressed ? Theme.wordmark : Theme.line
                             }
                             MouseArea {
                                 id: resizeMouse
@@ -243,8 +244,8 @@ Rectangle {
                 objectName: "fileListRow"
                 width: fileView.contentWidth
                 height: 43
-                color: fileMouse.containsMouse ? (isFolder ? "#F3F3F3" : "#F2F7FE") : "#FFFFFF"
-                border.color: "#EDF1F6"
+                color: fileMouse.containsMouse ? (isFolder ? Theme.surfaceMuted : Theme.accentSoft) : Theme.surface
+                border.color: Theme.line
                 border.width: 1
 
                 RowLayout {
@@ -285,14 +286,16 @@ Rectangle {
                                 anchors.fill: parent
                                 visible: !fileRow.isFolder
                                 radius: 3
-                                color: fileRow.typeLabel === "한글" ? "#EAF2FF" :
-                                       fileRow.typeLabel === "Word" ? "#E9F1FF" :
-                                       fileRow.typeLabel === "Excel" ? "#E9F8EF" :
-                                       fileRow.typeLabel === "PowerPoint" ? "#FFF0E9" : "#FCEBEC"
+                                color: fileRow.typeLabel === "한글" ? Theme.accentSoft :
+                                       fileRow.typeLabel === "Word" ? "#F3F1EF" :
+                                       fileRow.typeLabel === "Excel" ? Theme.successSoft :
+                                       fileRow.typeLabel === "PowerPoint" ? "#FFF6E8" : Theme.dangerSoft
                                 Text {
                                     anchors.centerIn: parent
                                     text: fileRow.extension.length > 2 ? fileRow.extension.substring(0, 2) : fileRow.extension
-                                    color: "#32547B"
+                                    color: fileRow.typeLabel === "Excel" ? Theme.success :
+                                           fileRow.typeLabel === "PowerPoint" ? "#9A5B10" :
+                                           Theme.red
                                     font.pixelSize: 9
                                     font.bold: true
                                 }
@@ -301,7 +304,7 @@ Rectangle {
                         Label {
                             Layout.fillWidth: true
                             text: fileRow.fileName
-                            color: "#1E2F46"
+                            color: Theme.ink
                             font.pixelSize: 12
                             elide: Text.ElideRight
                         }
@@ -315,7 +318,7 @@ Rectangle {
                             text: modelData === "type" ? fileRow.typeLabel
                                  : modelData === "size" ? fileRow.sizeText
                                  : fileRow.modifiedText
-                            color: "#687A93"
+                            color: Theme.inkSecondary
                             font.pixelSize: 11
                         }
                     }
@@ -341,7 +344,7 @@ Rectangle {
                 anchors.centerIn: parent
                 visible: fileView.count === 0
                 text: "이 폴더에 하위 폴더나 지원되는 문서 파일이 없습니다."
-                color: "#8290A4"
+                color: Theme.muted
                 font.pixelSize: 13
             }
         }
@@ -349,14 +352,14 @@ Rectangle {
         Rectangle {
             Layout.fillWidth: true
             Layout.preferredHeight: 36
-            color: "#F8FAFD"
+            color: Theme.surfaceMuted
             RowLayout {
                 anchors.fill: parent
                 anchors.leftMargin: 12
                 anchors.rightMargin: 12
-                Label { text: root.controller.currentFolderSummary; color: "#5E6F87"; font.pixelSize: 11 }
+                Label { text: root.controller.currentFolderSummary; color: Theme.inkSecondary; font.pixelSize: 11; font.family: Theme.fontFamily }
                 Item { Layout.fillWidth: true }
-                Label { text: root.controller.selectionSummary; color: "#2F74E8"; font.pixelSize: 11; font.bold: true }
+                Label { text: root.controller.selectionSummary; color: Theme.red; font.pixelSize: 11; font.bold: true; font.family: Theme.fontFamily }
             }
         }
     }

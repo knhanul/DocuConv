@@ -202,6 +202,14 @@ class AppController(QObject):
         return QUrl.fromLocalFile(str(self._app_dir / "assets" / "posid_logo.png")).toString()
 
     @Property(str, constant=True)
+    def signaturePath(self) -> str:
+        return QUrl.fromLocalFile(str(self._app_dir / "assets" / "posid_signature.png")).toString()
+
+    @Property(str, constant=True)
+    def signatureWhitePath(self) -> str:
+        return QUrl.fromLocalFile(str(self._app_dir / "assets" / "posid_signature_white.png")).toString()
+
+    @Property(str, constant=True)
     def aiResearchImagePath(self) -> str:
         return QUrl.fromLocalFile(str(self._app_dir / "assets" / "AIResearch.png")).toString()
 

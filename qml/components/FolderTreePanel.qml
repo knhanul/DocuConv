@@ -4,14 +4,15 @@ import QtQuick
 import QtQuick.Controls
 import QtQuick.Controls.Basic as Basic
 import QtQuick.Layouts
+import "../theme"
 
 Rectangle {
     id: root
     property var controller: appController
-    color: "#FFFFFF"
-    border.color: "#D8E0EC"
+    color: Theme.surface
+    border.color: Theme.line
     border.width: 1
-    radius: 4
+    radius: Theme.radius
 
     ColumnLayout {
         anchors.fill: parent
@@ -27,9 +28,10 @@ Rectangle {
             Label {
                 Layout.fillWidth: true
                 text: "파일 탐색"
-                color: "#26364D"
+                color: Theme.ink
                 font.pixelSize: 13
                 font.bold: true
+                font.family: Theme.fontFamily
             }
             ToolButton {
                 objectName: "refreshFoldersButton"
@@ -79,9 +81,16 @@ Rectangle {
                 height: kind === "section" ? 30 : 32
                 radius: 5
                 color: kind === "section" ? "transparent"
-                       : activeFolder ? "#E9E9E9"
-                       : rowHover.hovered ? "#F3F3F3" : "transparent"
+                       : activeFolder ? Theme.accentSoft
+                       : rowHover.hovered ? Theme.surfaceMuted : "transparent"
                 HoverHandler { id: rowHover }
+                Rectangle {
+                    visible: rowItem.activeFolder && rowItem.kind !== "section"
+                    width: 3
+                    height: parent.height
+                    anchors.left: parent.left
+                    color: Theme.red
+                }
                 MouseArea {
                     objectName: "folderNavigationArea"
                     anchors.fill: parent
@@ -112,7 +121,7 @@ Rectangle {
                             contentItem: Text {
                                 text: "›"
                                 rotation: rowItem.expanded ? 90 : 0
-                                color: "#73777F"
+                                color: Theme.muted
                                 font.pixelSize: 20
                                 horizontalAlignment: Text.AlignHCenter
                                 verticalAlignment: Text.AlignVCenter
@@ -132,9 +141,10 @@ Rectangle {
                     Label {
                         Layout.fillWidth: true
                         text: rowItem.folderName
-                        color: rowItem.kind === "section" ? "#60656D" : "#30343B"
+                        color: rowItem.kind === "section" ? Theme.muted : (rowItem.activeFolder ? Theme.ink : Theme.ink)
                         font.pixelSize: 12
-                        font.bold: rowItem.kind === "section"
+                        font.bold: rowItem.kind === "section" || rowItem.activeFolder
+                        font.family: Theme.fontFamily
                         elide: Text.ElideRight
                     }
                     Item {

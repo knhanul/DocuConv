@@ -1,8 +1,9 @@
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Controls.Basic as Basic
 import QtQuick.Layouts
-import QtQuick.Window
 import "../components"
+import "../theme"
 
 Item {
     id: root
@@ -12,23 +13,23 @@ Item {
         orientation: Qt.Horizontal
 
         Item {
-            SplitView.preferredWidth: parent.width * 0.53
-            SplitView.minimumWidth: 620
+            SplitView.preferredWidth: Math.round(parent.width * 0.48)
+            SplitView.minimumWidth: 560
 
             ColumnLayout {
                 anchors.fill: parent
-                anchors.margins: 10
+                anchors.margins: 12
                 spacing: 8
 
                 Item {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 30
+                    Layout.preferredHeight: 32
                     clip: true
 
                     Row {
                         id: breadcrumbRow
                         x: Math.min(0, parent.width - implicitWidth)
-                        height: 30
+                        height: 32
                         spacing: 0
                         Repeater {
                             model: appController.currentBreadcrumbs
@@ -36,30 +37,44 @@ Item {
                                 required property int index
                                 required property var modelData
                                 Label {
-                                    height: 30
-                                    width: 16
+                                    height: 32
+                                    width: 14
                                     visible: parent.index > 0
-                                    text: "›"
-                                    color: "#8A9099"
-                                    font.pixelSize: 14
+                                    text: "/"
+                                    color: Theme.muted
+                                    font.pixelSize: 12
+                                    font.family: Theme.fontFamily
                                     verticalAlignment: Text.AlignVCenter
                                     horizontalAlignment: Text.AlignHCenter
                                 }
-                                Button {
+                                Basic.Button {
                                     id: crumbButton
                                     objectName: "breadcrumbButton"
                                     property string crumbPath: parent.modelData.path
-                                    height: 30
+                                    property string crumbLabel: parent.modelData.label
+                                    height: 32
                                     leftPadding: 6
                                     rightPadding: 6
-                                    text: parent.modelData.label
-                                    font.pixelSize: 14
+                                    font.pixelSize: 13
                                     font.bold: true
+                                    font.family: Theme.fontFamily
                                     flat: true
-                                    Accessible.name: text
+                                    Accessible.name: crumbLabel
                                     ToolTip.visible: hovered
                                     ToolTip.text: crumbPath
                                     onClicked: appController.navigateToFolder(crumbPath)
+
+                                    background: Rectangle {
+                                        color: crumbButton.hovered ? Theme.accentSoft : "transparent"
+                                        radius: 4
+                                    }
+                                    contentItem: Text {
+                                        text: crumbButton.crumbLabel
+                                        color: crumbButton.hovered ? Theme.red : Theme.ink
+                                        font: crumbButton.font
+                                        horizontalAlignment: Text.AlignHCenter
+                                        verticalAlignment: Text.AlignVCenter
+                                    }
                                 }
                             }
                         }
@@ -85,12 +100,13 @@ Item {
 
         Item {
             SplitView.fillWidth: true
-            SplitView.minimumWidth: 650
+            SplitView.minimumWidth: 560
+            clip: true
 
             ColumnLayout {
                 anchors.fill: parent
-                anchors.margins: 10
-                spacing: 8
+                anchors.margins: 12
+                spacing: 10
 
                 SectionCard {
                     Layout.fillWidth: true
@@ -112,8 +128,8 @@ Item {
                                 Layout.fillHeight: true
                                 title: "HWPX 변환"
                                 subtitle: "HWP → HWPX"
-                                iconText: "H"
-                                accentColor: "#2F74E8"
+                                iconText: "HWP"
+                                accentColor: Theme.red
                                 selected: appController.conversionMode === "hwpx"
                                 notice: "HWPX 변환은 한글 프로그램이 설치된 Windows 환경에서만 사용할 수 있습니다."
                                 onClicked: appController.setConversionMode("hwpx")
@@ -124,7 +140,7 @@ Item {
                                 title: "PDF 변환"
                                 subtitle: "HWP/HWPX · Word · Excel · PowerPoint → PDF"
                                 iconText: "PDF"
-                                accentColor: "#EE4D4D"
+                                accentColor: "#C2410C"
                                 selected: appController.conversionMode === "pdf"
                                 chips: ["HWP", "HWPX", "DOCX", "XLSX", "PPTX"]
                                 onClicked: appController.setConversionMode("pdf")
@@ -135,7 +151,7 @@ Item {
                                 title: "이미지 변환"
                                 subtitle: "PDF 1개 → 페이지별 이미지"
                                 iconText: "IMG"
-                                accentColor: "#20A66A"
+                                accentColor: "#A16207"
                                 selected: appController.conversionMode === "image"
                                 chips: ["PNG", "JPG", "TIFF"]
                                 notice: "이미지 변환은 한 번에 문서 한 개만 선택할 수 있습니다."
@@ -146,50 +162,94 @@ Item {
                         RowLayout {
                             Layout.fillWidth: true
                             spacing: 8
-                            Label { text: "출력 폴더"; color: "#26364D"; font.bold: true; Layout.preferredWidth: 74 }
-                            TextField {
+                            Label {
+                                text: "출력 폴더"
+                                color: Theme.ink
+                                font.bold: true
+                                font.family: Theme.fontFamily
+                                Layout.preferredWidth: 74
+                            }
+                            Basic.TextField {
                                 Layout.fillWidth: true
+                                implicitWidth: 80
                                 text: appController.outputFolder
                                 readOnly: true
                                 selectByMouse: true
+                                color: Theme.ink
+                                font.pixelSize: 13
+                                font.family: Theme.fontFamily
+                                leftPadding: 10
+                                rightPadding: 10
+                                implicitHeight: 34
+                                background: Rectangle {
+                                    radius: Theme.radiusSm
+                                    color: Theme.surfaceMuted
+                                    border.color: Theme.lineStrong
+                                    border.width: 1
+                                }
                             }
-                            Button { text: "찾아보기"; onClicked: appController.chooseOutputFolder() }
+                            AppButton {
+                                text: "찾아보기"
+                                onClicked: appController.chooseOutputFolder()
+                            }
                         }
 
                         RowLayout {
                             Layout.fillWidth: true
                             spacing: 14
-                            Label { text: "옵션"; color: "#26364D"; font.bold: true; Layout.preferredWidth: 74 }
+                            Label {
+                                text: "옵션"
+                                color: Theme.ink
+                                font.bold: true
+                                font.family: Theme.fontFamily
+                                Layout.preferredWidth: 74
+                            }
                             RowLayout {
                                 visible: appController.conversionMode === "pdf"
                                 spacing: 8
-                                Label { text: "변환 방식"; color: "#53657C" }
+                                Label { text: "변환 방식"; color: Theme.inkSecondary; font.family: Theme.fontFamily }
                                 ComboBox {
+                                    id: pdfMethodCombo
                                     objectName: "pdfConversionMethodCombo"
+                                    Layout.fillWidth: true
+                                    Layout.minimumWidth: 120
+                                    implicitWidth: 160
                                     model: ["원본 프로그램으로 변환", "LibreOffice로 변환"]
                                     currentIndex: appController.pdfConversionMethod === "libreoffice" ? 1 : 0
                                     enabled: !appController.busy
                                     onActivated: appController.setPdfConversionMethod(currentIndex === 1 ? "libreoffice" : "original")
                                     ToolTip.visible: hovered
                                     ToolTip.text: "LibreOffice 방식은 별도 설치가 필요하며 문서 레이아웃이 달라질 수 있습니다. HWP/HWPX는 H2Orestart와 Java 설정도 필요합니다."
+                                    font.family: Theme.fontFamily
+                                    contentItem: Text {
+                                        text: pdfMethodCombo.displayText
+                                        font: pdfMethodCombo.font
+                                        color: pdfMethodCombo.enabled ? Theme.ink : Theme.muted
+                                        leftPadding: 10
+                                        rightPadding: pdfMethodCombo.indicator ? pdfMethodCombo.indicator.width + 6 : 24
+                                        verticalAlignment: Text.AlignVCenter
+                                        elide: Text.ElideRight
+                                    }
                                 }
                             }
                             RowLayout {
                                 visible: appController.conversionMode === "image"
                                 spacing: 8
-                                Label { text: "이미지 형식"; color: "#53657C" }
+                                Label { text: "이미지 형식"; color: Theme.inkSecondary; font.family: Theme.fontFamily }
                                 ComboBox {
                                     model: ["PNG", "JPG", "TIFF"]
                                     currentIndex: appController.imageFormat === "png" ? 0 : appController.imageFormat === "jpg" ? 1 : 2
                                     onActivated: appController.setImageFormat(currentText.toLowerCase())
+                                    font.family: Theme.fontFamily
                                 }
                             }
                             CheckBox {
                                 text: "동일 파일 덮어쓰기"
                                 checked: appController.overwrite
+                                font.family: Theme.fontFamily
                                 onToggled: appController.setOverwrite(checked)
                             }
-                            Button { text: "출력 폴더 열기"; onClicked: appController.openOutputFolder() }
+                            AppButton { text: "출력 폴더 열기"; onClicked: appController.openOutputFolder() }
                             Item { Layout.fillWidth: true }
                         }
                     }
@@ -202,27 +262,37 @@ Item {
 
                 Rectangle {
                     Layout.fillWidth: true
-                    Layout.preferredHeight: 92
-                    color: "#FFFFFF"
-                    radius: 5
-                    border.color: "#D8E0EC"
+                    Layout.preferredHeight: 88
+                    color: Theme.surface
+                    radius: Theme.radius
+                    border.color: Theme.line
                     border.width: 1
 
                     RowLayout {
                         anchors.fill: parent
-                        anchors.margins: 12
-                        spacing: 14
+                        anchors.margins: 14
+                        spacing: 16
 
                         ColumnLayout {
                             Layout.fillWidth: true
-                            spacing: 5
+                            spacing: 6
                             RowLayout {
                                 Layout.fillWidth: true
-                                Label { text: "전체 진행률"; color: "#26364D"; font.bold: true }
+                                Label {
+                                    text: "전체 진행률"
+                                    color: Theme.ink
+                                    font.bold: true
+                                    font.family: Theme.fontFamily
+                                }
                                 Item { Layout.fillWidth: true }
-                                Label { text: appController.overallProgress + "%"; color: "#3B4D65" }
+                                Label {
+                                    text: appController.overallProgress + "%"
+                                    color: Theme.red
+                                    font.bold: true
+                                    font.family: Theme.fontFamily
+                                }
                             }
-                            ProgressBar {
+                            AppProgress {
                                 Layout.fillWidth: true
                                 from: 0
                                 to: 100
@@ -230,35 +300,41 @@ Item {
                             }
                             RowLayout {
                                 Layout.fillWidth: true
-                                Label { text: "작업 상태: " + appController.statusText; color: "#65758B"; font.pixelSize: 11 }
+                                Label {
+                                    text: appController.statusText
+                                    color: Theme.inkSecondary
+                                    font.pixelSize: 12
+                                    font.family: Theme.fontFamily
+                                }
                                 Item { Layout.fillWidth: true }
-                                Label { text: appController.jobCountSummary; color: "#65758B"; font.pixelSize: 11 }
+                                Label {
+                                    text: appController.jobCountSummary
+                                    color: Theme.muted
+                                    font.pixelSize: 11
+                                    font.family: Theme.fontFamily
+                                }
                             }
                         }
 
-                        Button {
+                        AppButton {
                             id: startButton
                             visible: !appController.busy
-                            Layout.preferredWidth: 160
+                            variant: "primary"
+                            Layout.preferredWidth: 156
                             Layout.fillHeight: true
-                            text: "▷  변환 시작"
+                            text: "변환 시작"
                             font.pixelSize: 15
-                            font.bold: true
                             onClicked: appController.startConversion()
-                            background: Rectangle { color: startButton.hovered ? "#2868D2" : "#2F74E8"; radius: 5 }
-                            contentItem: Text { text: startButton.text; color: "white"; font: startButton.font; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
                         }
-                        Button {
+                        AppButton {
                             id: cancelButton
                             visible: appController.busy
-                            Layout.preferredWidth: 160
+                            variant: "dangerSolid"
+                            Layout.preferredWidth: 156
                             Layout.fillHeight: true
-                            text: "■  작업 취소"
+                            text: "작업 취소"
                             font.pixelSize: 15
-                            font.bold: true
                             onClicked: appController.cancelConversion()
-                            background: Rectangle { color: cancelButton.hovered ? "#C73B3B" : "#E34B4B"; radius: 5 }
-                            contentItem: Text { text: cancelButton.text; color: "white"; font: cancelButton.font; horizontalAlignment: Text.AlignHCenter; verticalAlignment: Text.AlignVCenter }
                         }
                     }
                 }
