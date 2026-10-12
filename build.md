@@ -28,7 +28,7 @@ Set-ExecutionPolicy -Scope Process Bypass
 .\scripts\build.ps1
 ```
 
-버전과 빌드 날짜를 영어로 입력받습니다. 날짜를 비워 두면 오늘 날짜가 자동 입력됩니다.
+버전과 빌드 날짜를 영어로 입력받습니다. 버전은 필수이며, 날짜를 비워 두거나 `yyyy-MM-dd` 형식이 아니면 오늘 날짜가 자동 입력됩니다.
 
 ```
 Enter version (e.g. 1.0.0): 1.0.1

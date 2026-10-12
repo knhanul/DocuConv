@@ -13,14 +13,20 @@ if (-not (Test-Path ".venv\Scripts\python.exe")) {
     throw ".venv not found. Please run .\scripts\setup.ps1 first."
 }
 
-if (-not $Version) {
-    $Version = Read-Host "Enter version (e.g. 1.0.0)"
+while (-not $Version) {
+    $Version = (Read-Host "Enter version (e.g. 1.0.0)").Trim()
+    if (-not $Version) {
+        Write-Host "Version is required." -ForegroundColor Yellow
+    }
 }
 if (-not $BuildDate) {
-    $BuildDate = Read-Host "Enter build date (e.g. 2026-10-12, Enter for today)"
-    if (-not $BuildDate) {
-        $BuildDate = Get-Date -Format "yyyy-MM-dd"
+    $BuildDate = (Read-Host "Enter build date (e.g. 2026-10-12, Enter for today)").Trim()
+}
+if ($BuildDate -notmatch '^\d{4}-\d{2}-\d{2}$') {
+    if ($BuildDate) {
+        Write-Host "Invalid date format. Using today's date instead." -ForegroundColor Yellow
     }
+    $BuildDate = Get-Date -Format "yyyy-MM-dd"
 }
 
 $VersionFile = Join-Path $Root "backend\version.py"
