@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="워드 파일">
+<path d="M15 5h25l12 12v38a5 5 0 0 1-5 5H15a5 5 0 0 1-5-5V10a5 5 0 0 1 5-5Z" fill="#fff" stroke="#2166C2" stroke-width="2.3" stroke-linejoin="round"/>
+<path d="M40 5v10a2 2 0 0 0 2 2h10" fill="#DFECFF" stroke="#2166C2" stroke-width="2.3" stroke-linejoin="round"/>
+<path d="M41 27h7M41 34h7M41 41h7" stroke="#80A9E1" stroke-width="3" stroke-linecap="round"/><rect x="4" y="23" width="35" height="30" rx="5" fill="#2166C2"/><text x="21.5" y="44" font-size="22" font-weight="800" text-anchor="middle" font-family="Arial,sans-serif" fill="white">W</text>
+</svg>

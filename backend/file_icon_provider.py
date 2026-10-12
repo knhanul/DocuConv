@@ -1,8 +1,18 @@
 from pathlib import Path
 
 from PySide6.QtCore import QFileInfo, QSize, QStandardPaths, QUrl
+from PySide6.QtGui import QIcon
 from PySide6.QtQuick import QQuickImageProvider
 from PySide6.QtWidgets import QFileIconProvider
+
+
+DOCUMENT_ICONS = {
+    **dict.fromkeys({"hwp", "hwpx"}, "hwp"),
+    **dict.fromkeys({"doc", "docx", "docm", "dot", "dotx", "rtf", "odt"}, "word"),
+    **dict.fromkeys({"xls", "xlsx", "xlsm", "xlsb", "csv"}, "excel"),
+    **dict.fromkeys({"ppt", "pptx", "pptm", "pps", "ppsx"}, "powerpoint"),
+    "pdf": "pdf",
+}
 
 
 class FileIconProvider(QQuickImageProvider):
@@ -24,6 +34,11 @@ class FileIconProvider(QQuickImageProvider):
         return pixmap
 
     def _icon_for(self, identifier):
+        if identifier.startswith("document/"):
+            extension = identifier[len("document/"):].lower()
+            icon_name = DOCUMENT_ICONS.get(extension, "pdf")
+            icon_path = Path(__file__).resolve().parent.parent / "assets" / f"icon_{icon_name}.svg"
+            return QIcon(str(icon_path))
         if identifier.startswith("file/"):
             raw = identifier[len("file/"):]
             path = QUrl.fromPercentEncoding(raw.encode("utf-8"))

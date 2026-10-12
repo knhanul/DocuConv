@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="파워포인트 파일">
+<path d="M15 5h25l12 12v38a5 5 0 0 1-5 5H15a5 5 0 0 1-5-5V10a5 5 0 0 1 5-5Z" fill="#fff" stroke="#E65D2F" stroke-width="2.3" stroke-linejoin="round"/>
+<path d="M40 5v10a2 2 0 0 0 2 2h10" fill="#FFE8DA" stroke="#E65D2F" stroke-width="2.3" stroke-linejoin="round"/>
+<circle cx="42" cy="39" r="10" fill="#F5A27D"/><path d="M42 29v10h10" fill="none" stroke="white" stroke-width="2.5"/><rect x="4" y="23" width="35" height="30" rx="5" fill="#D94D22"/><text x="21" y="44" font-size="24" font-weight="800" text-anchor="middle" font-family="Arial,sans-serif" fill="white">P</text>
+</svg>

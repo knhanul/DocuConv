@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import sys
 import threading
 from pathlib import Path
@@ -15,6 +16,8 @@ from converters.pdf.excel_to_pdf import ExcelToPdfConverter
 from converters.pdf.hwp_to_pdf import HwpToPdfConverter
 from converters.pdf.powerpoint_to_pdf import PowerPointToPdfConverter
 from converters.pdf.word_to_pdf import WordToPdfConverter
+
+logger = logging.getLogger(__name__)
 
 
 def is_com_application_installed(progid: str) -> bool:
@@ -36,6 +39,7 @@ def is_com_application_installed(progid: str) -> bool:
 
 def require_application(progid: str, name: str) -> None:
     if not is_com_application_installed(progid):
+        logger.warning("필수 프로그램을 찾지 못했습니다: %s (ProgID=%s)", name, progid)
         raise DependencyMissingError(
             f"{name}이(가) 설치되어 있지 않거나 COM 자동화 등록을 찾을 수 없습니다. "
             f"이 문서를 변환하려면 {name} 설치가 필요합니다. "

@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="아래아한글 파일">
+<path d="M15 5h25l12 12v38a5 5 0 0 1-5 5H15a5 5 0 0 1-5-5V10a5 5 0 0 1 5-5Z" fill="#fff" stroke="#1768CB" stroke-width="2.3" stroke-linejoin="round"/>
+<path d="M40 5v10a2 2 0 0 0 2 2h10" fill="#DCEBFF" stroke="#1768CB" stroke-width="2.3" stroke-linejoin="round"/>
+<rect x="4" y="23" width="35" height="30" rx="5" fill="#1768CB"/><text x="21.5" y="44" font-size="23" font-weight="800" text-anchor="middle" font-family="Malgun Gothic,Apple SD Gothic Neo,sans-serif" fill="white">한</text><path d="M42 27h6M42 34h6M42 41h6" stroke="#7AA9E5" stroke-width="3" stroke-linecap="round"/>
+</svg>

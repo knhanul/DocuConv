@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="PDF 파일">
+<path d="M15 5h25l12 12v38a5 5 0 0 1-5 5H15a5 5 0 0 1-5-5V10a5 5 0 0 1 5-5Z" fill="#fff" stroke="#E13939" stroke-width="2.3" stroke-linejoin="round"/>
+<path d="M40 5v10a2 2 0 0 0 2 2h10" fill="#FFE2E2" stroke="#E13939" stroke-width="2.3" stroke-linejoin="round"/>
+<rect x="4" y="23" width="45" height="30" rx="5" fill="#E13939"/><text x="26.5" y="43" font-size="17" font-weight="800" letter-spacing="-.6" text-anchor="middle" font-family="Arial,sans-serif" fill="white">PDF</text>
+</svg>

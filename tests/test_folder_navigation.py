@@ -716,6 +716,21 @@ def test_system_folder_and_drive_icons_are_available(application):
         assert size == pixmap.size()
 
 
+def test_document_type_icons_are_bundled_for_all_supported_extensions(application):
+    from backend.file_icon_provider import DOCUMENT_ICONS
+
+    provider = FileIconProvider()
+    icons = {}
+    for extension, category in DOCUMENT_ICONS.items():
+        size = QSize()
+        pixmap = provider.requestPixmap(f"document/{extension}", size, QSize(24, 24))
+        assert not pixmap.isNull(), extension
+        assert size == pixmap.size()
+        icons[category] = pixmap.toImage()
+    assert set(icons) == {"hwp", "word", "excel", "powerpoint", "pdf"}
+    assert len({image.cacheKey() for image in icons.values()}) == 5
+
+
 def test_full_application_qml_still_loads(controller, application):
     project = Path(__file__).resolve().parents[1]
     controller._app_dir = project

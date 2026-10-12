@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import sys
 from pathlib import Path
 
@@ -22,6 +23,8 @@ from backend.selection_manager import SelectionManager
 from backend.settings import AppSettings
 from backend.version import APP_VERSION, BUILD_DATE
 from backend.worker import ConversionWorker
+
+logger = logging.getLogger(__name__)
 
 
 class AppController(QObject):
@@ -409,11 +412,13 @@ class AppController(QObject):
         self._worker.jobChanged.connect(self._on_job_changed)
         self._worker.jobFinished.connect(self._on_job_finished)
         self._worker.allFinished.connect(self._on_all_finished)
+        logger.info("변환 시작: 모드=%s, 파일 %d개, 출력 폴더=%s", self._conversion_mode, len(jobs), output_root)
         self._worker.start()
 
     @Slot()
     def cancelConversion(self) -> None:
         if self._worker and self._worker.isRunning():
+            logger.info("사용자가 변환 취소를 요청했습니다.")
             self._worker.request_cancel()
             self._set_status("취소 요청 중")
 
@@ -474,6 +479,7 @@ class AppController(QObject):
         self._set_status("취소됨" if was_cancelled else "작업 완료")
         self._worker = None
         _, completed, failed, cancelled = self._job_list.counts()
+        logger.info("변환 작업 완료: 완료 %d, 실패 %d, 취소 %d", completed, failed, cancelled)
         if failed:
             summary = f"완료 {completed}개, 실패 {failed}개, 취소 {cancelled}개입니다."
             if self._dependency_messages:

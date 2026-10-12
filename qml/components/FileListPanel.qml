@@ -240,7 +240,7 @@ Rectangle {
                 required property string typeLabel
                 required property string sizeText
                 required property string modifiedText
-                required property string filePath
+                required property string extension
                 objectName: "fileListRow"
                 width: fileView.contentWidth
                 height: 43
@@ -283,11 +283,12 @@ Rectangle {
                                 fillMode: Image.PreserveAspectFit
                             }
                             Image {
+                                objectName: "fileTypeIcon"
                                 anchors.centerIn: parent
                                 width: 24
                                 height: 24
                                 visible: !fileRow.isFolder
-                                source: visible ? "image://filesystem/file/" + encodeURIComponent(fileRow.filePath) : ""
+                                source: visible ? "image://filesystem/document/" + fileRow.extension.toLowerCase() : ""
                                 sourceSize: Qt.size(32, 32)
                                 fillMode: Image.PreserveAspectFit
                             }

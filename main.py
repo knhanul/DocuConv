@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import logging
 import os
 import sys
 from pathlib import Path
 
-from PySide6.QtCore import QCoreApplication, QUrl
+from PySide6.QtCore import QCoreApplication, QStandardPaths, QUrl
 from PySide6.QtGui import QColor, QFont, QIcon, QPalette
 from PySide6.QtQml import QQmlApplicationEngine
 from PySide6.QtQuickControls2 import QQuickStyle
@@ -12,7 +13,10 @@ from PySide6.QtWidgets import QApplication
 
 from backend.app_controller import AppController
 from backend.file_icon_provider import FileIconProvider
-from backend.version import APP_VERSION
+from backend.logging_config import setup_logging
+from backend.version import APP_VERSION, BUILD_DATE
+
+logger = logging.getLogger(__name__)
 
 if getattr(sys, "frozen", False):
     APP_DIR = Path(sys._MEIPASS)
@@ -61,6 +65,8 @@ def main() -> int:
     QCoreApplication.setApplicationVersion(APP_VERSION)
 
     app = QApplication(sys.argv)
+    log_path = setup_logging(Path(QStandardPaths.writableLocation(QStandardPaths.AppLocalDataLocation)))
+    logger.info("앱 시작: v%s (빌드 %s), 로그 파일: %s", APP_VERSION, BUILD_DATE, log_path)
     apply_brand_palette(app)
     app.setQuitOnLastWindowClosed(True)
     app.setWindowIcon(QIcon(str(APP_DIR / "assets" / "posid_logo.ico")))
@@ -76,6 +82,7 @@ def main() -> int:
         return 1
 
     exit_code = app.exec()
+    logger.info("앱 종료: exit_code=%d", exit_code)
     controller.shutdown()
     del engine
     return exit_code

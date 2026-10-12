@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="엑셀 파일">
+<path d="M15 5h25l12 12v38a5 5 0 0 1-5 5H15a5 5 0 0 1-5-5V10a5 5 0 0 1 5-5Z" fill="#fff" stroke="#137C50" stroke-width="2.3" stroke-linejoin="round"/>
+<path d="M40 5v10a2 2 0 0 0 2 2h10" fill="#D9F3E5" stroke="#137C50" stroke-width="2.3" stroke-linejoin="round"/>
+<rect x="4" y="23" width="35" height="30" rx="5" fill="#137C50"/><path d="m16 32 11 13m0-13L16 45" stroke="white" stroke-width="4" stroke-linecap="round"/><path d="M42 27h6M42 34h6M42 41h6" stroke="#56AC7B" stroke-width="3" stroke-linecap="round"/>
+</svg>
