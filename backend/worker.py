@@ -68,7 +68,7 @@ class ConversionWorker(QThread):
                 except DependencyMissingError as exc:
                     self.jobChanged.emit(job.id, "실패", job.progress, str(exc))
                     self.dependencyMissing.emit(str(exc))
-                    logger.warning("필수 프로그램 미설치: %s — %s", job.input_path.name, exc)
+                    logger.warning("변환 실행 환경 오류: %s — %s", job.input_path.name, exc)
                 except Exception as exc:  # 각 파일 실패 후 다음 파일을 계속 처리합니다.
                     detail = f"{type(exc).__name__}: {exc}"
                     self.jobChanged.emit(job.id, "실패", job.progress, detail)

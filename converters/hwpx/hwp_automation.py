@@ -48,7 +48,11 @@ class HwpAutomationManager:
         except Exception:
             logger.info("[HWP] HWP version: unknown")
 
-        self._register_security_module()
+        try:
+            self._register_security_module()
+        except Exception:
+            self.shutdown()
+            raise
 
         try:
             self._hwp.XHwpWindows.Item(0).Visible = self._settings.hwp_visible
@@ -64,30 +68,36 @@ class HwpAutomationManager:
         logger.info("[HWP] Automation started successfully")
 
     def _register_security_module(self) -> None:
-        module_name = self._settings.hwp_security_module_name.strip()
-        if not module_name:
-            module_name = _SECURITY_MODULE_NAME
+        self._security_registered = False
+        module_name = self._settings.hwp_security_module_name.strip() or _SECURITY_MODULE_NAME
+        if module_name == _SECURITY_MODULE_NAME:
+            dll_path = self._find_security_dll()
+            if dll_path is None:
+                raise DependencyMissingError(
+                    f"한글 보안 모듈 DLL을 찾을 수 없습니다: {_SECURITY_MODULE_DLL}. "
+                    "배포 파일의 assets 폴더와 보안 모듈 포함 여부를 확인해 주세요. 문서 열기를 중단합니다."
+                )
+            self._ensure_registry_entry(module_name, str(dll_path.resolve()))
 
-        dll_path = self._find_security_dll()
-        if dll_path:
-            self._ensure_registry_entry(module_name, str(dll_path))
-
+        message = (
+            f"한글 보안 모듈 등록에 실패했습니다: {module_name} "
+            f"(유형: {self._settings.hwp_security_module_type}). "
+            "문서 열기를 중단합니다. 한글 버전과 호환되는 보안 모듈 DLL, "
+            "레지스트리 등록 경로 및 appsettings.json의 모듈 설정을 확인해 주세요."
+        )
         try:
             result = self._hwp.RegisterModule(self._settings.hwp_security_module_type, module_name)
         except Exception as exc:
-            logger.warning("[HWP] RegisterModule exception: type=%s module=%s error=%s",
-                           self._settings.hwp_security_module_type, module_name, exc)
-            self._security_registered = False
-            return
-
-        if result:
-            self._security_registered = True
-            logger.info("[HWP] RegisterModule success: type=%s module=%s",
-                        self._settings.hwp_security_module_type, module_name)
-        else:
-            self._security_registered = False
-            logger.warning("[HWP] RegisterModule failed: type=%s module=%s",
-                           self._settings.hwp_security_module_type, module_name)
+            logger.exception("[HWP] RegisterModule exception: type=%s module=%s",
+                             self._settings.hwp_security_module_type, module_name)
+            raise DependencyMissingError(f"{message} 오류: {exc}") from exc
+        if not result:
+            logger.error("[HWP] RegisterModule failed: type=%s module=%s result=%r",
+                         self._settings.hwp_security_module_type, module_name, result)
+            raise DependencyMissingError(message)
+        self._security_registered = True
+        logger.info("[HWP] RegisterModule success: type=%s module=%s",
+                    self._settings.hwp_security_module_type, module_name)
 
     def _find_security_dll(self) -> Path | None:
         candidates = [
@@ -96,7 +106,7 @@ class HwpAutomationManager:
         if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
             candidates.append(Path(sys._MEIPASS) / "assets" / _SECURITY_MODULE_DLL)
         for p in candidates:
-            if p.exists():
+            if p.is_file():
                 logger.info("[HWP] Security DLL found: %s", p)
                 return p
         logger.warning("[HWP] Security DLL not found in any candidate location")
@@ -105,25 +115,27 @@ class HwpAutomationManager:
     def _ensure_registry_entry(self, module_name: str, dll_path: str) -> None:
         try:
             import winreg
-            key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, _REGISTRY_PATH, 0, winreg.KEY_READ)
+
             existing = None
             try:
-                existing, _ = winreg.QueryValueEx(key, module_name)
-            except (FileNotFoundError, OSError):
+                with winreg.OpenKey(winreg.HKEY_CURRENT_USER, _REGISTRY_PATH, 0, winreg.KEY_READ) as key:
+                    existing, _ = winreg.QueryValueEx(key, module_name)
+            except FileNotFoundError:
                 pass
-            finally:
-                winreg.CloseKey(key)
-
             if existing == dll_path:
                 logger.info("[HWP] Registry entry already correct: %s = %s", module_name, dll_path)
                 return
 
-            key = winreg.OpenKey(winreg.HKEY_CURRENT_USER, _REGISTRY_PATH, 0, winreg.KEY_SET_VALUE)
-            winreg.SetValueEx(key, module_name, 0, winreg.REG_SZ, dll_path)
-            winreg.CloseKey(key)
+            with winreg.CreateKeyEx(winreg.HKEY_CURRENT_USER, _REGISTRY_PATH, 0, winreg.KEY_SET_VALUE) as key:
+                winreg.SetValueEx(key, module_name, 0, winreg.REG_SZ, dll_path)
             logger.info("[HWP] Registry entry registered: %s = %s", module_name, dll_path)
         except OSError as exc:
-            logger.warning("[HWP] Registry registration failed: %s", exc)
+            logger.exception("[HWP] Registry registration failed: key=HKCU\\%s module=%s dll=%s",
+                             _REGISTRY_PATH, module_name, dll_path)
+            raise DependencyMissingError(
+                f"한글 보안 모듈의 레지스트리 등록에 실패했습니다: {module_name}. "
+                f"HKCU\\{_REGISTRY_PATH} 경로의 쓰기 권한과 보안 정책을 확인해 주세요. 오류: {exc}"
+            ) from exc
 
     def open_document(self, input_path: Path) -> None:
         self._ensure_started()
