@@ -8,13 +8,14 @@ from PySide6.QtCore import QThread, Signal
 
 from backend.job_model import ConversionJob
 from backend.settings import AppSettings
-from converters.base import ConversionCancelled
+from converters.base import ConversionCancelled, DependencyMissingError
 from converters.registry import ConverterRegistry
 
 
 class ConversionWorker(QThread):
     jobChanged = Signal(str, str, int, str)
     jobFinished = Signal(str)
+    dependencyMissing = Signal(str)
     allFinished = Signal(bool)
 
     def __init__(self, jobs: list[ConversionJob], settings: AppSettings, parent=None) -> None:
@@ -54,6 +55,9 @@ class ConversionWorker(QThread):
                     self.jobChanged.emit(job.id, "완료", 100, "변환이 완료되었습니다.")
                 except ConversionCancelled as exc:
                     self.jobChanged.emit(job.id, "취소됨", job.progress, str(exc))
+                except DependencyMissingError as exc:
+                    self.jobChanged.emit(job.id, "실패", job.progress, str(exc))
+                    self.dependencyMissing.emit(str(exc))
                 except Exception as exc:  # 각 파일 실패 후 다음 파일을 계속 처리합니다.
                     detail = f"{type(exc).__name__}: {exc}"
                     self.jobChanged.emit(job.id, "실패", job.progress, detail)

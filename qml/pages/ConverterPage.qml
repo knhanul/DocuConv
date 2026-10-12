@@ -205,34 +205,6 @@ Item {
                                 Layout.preferredWidth: 74
                             }
                             RowLayout {
-                                visible: appController.conversionMode === "pdf"
-                                spacing: 8
-                                Label { text: "변환 방식"; color: Theme.inkSecondary; font.family: Theme.fontFamily }
-                                AppComboBox {
-                                    id: pdfMethodCombo
-                                    objectName: "pdfConversionMethodCombo"
-                                    Layout.fillWidth: true
-                                    Layout.minimumWidth: 120
-                                    implicitWidth: 160
-                                    model: ["원본 프로그램으로 변환", "LibreOffice로 변환"]
-                                    currentIndex: appController.pdfConversionMethod === "libreoffice" ? 1 : 0
-                                    enabled: !appController.busy
-                                    onActivated: appController.setPdfConversionMethod(currentIndex === 1 ? "libreoffice" : "original")
-                                    ToolTip.visible: hovered
-                                    ToolTip.text: "LibreOffice 방식은 별도 설치가 필요하며 문서 레이아웃이 달라질 수 있습니다. HWP/HWPX는 H2Orestart와 Java 설정도 필요합니다."
-                                    font.family: Theme.fontFamily
-                                    contentItem: Text {
-                                        text: pdfMethodCombo.displayText
-                                        font: pdfMethodCombo.font
-                                        color: pdfMethodCombo.enabled ? Theme.ink : Theme.muted
-                                        leftPadding: 10
-                                        rightPadding: pdfMethodCombo.indicator ? pdfMethodCombo.indicator.width + 6 : 24
-                                        verticalAlignment: Text.AlignVCenter
-                                        elide: Text.ElideRight
-                                    }
-                                }
-                            }
-                            RowLayout {
                                 visible: appController.conversionMode === "image"
                                 spacing: 8
                                 Label { text: "이미지 형식"; color: Theme.inkSecondary; font.family: Theme.fontFamily }

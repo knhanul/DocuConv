@@ -17,7 +17,10 @@ if (-not $Version) {
     $Version = Read-Host "Enter version (e.g. 1.0.0)"
 }
 if (-not $BuildDate) {
-    $BuildDate = Read-Host "Enter build date (e.g. 2026-08-10)"
+    $BuildDate = Read-Host "Enter build date (e.g. 2026-10-12, Enter for today)"
+    if (-not $BuildDate) {
+        $BuildDate = Get-Date -Format "yyyy-MM-dd"
+    }
 }
 
 $VersionFile = Join-Path $Root "backend\version.py"
@@ -32,4 +35,4 @@ Write-Host "Version: v$Version (Build date: $BuildDate)" -ForegroundColor Cyan
 
 & .\.venv\Scripts\python.exe -m pytest
 & .\.venv\Scripts\python.exe -m PyInstaller --noconfirm --clean posid_document_converter_onefile.spec
-Write-Host "Build complete: dist\POSID_DocumentConverter.exe" -ForegroundColor Green
+Write-Host "Build complete: dist\POSID_DocConv.exe" -ForegroundColor Green

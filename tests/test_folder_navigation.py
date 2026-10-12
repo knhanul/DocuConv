@@ -243,15 +243,11 @@ def test_conversion_queue_contains_checked_files_only_after_navigation(controlle
     worker.start.assert_called_once()
 
 
-def test_pdf_conversion_method_is_saved_and_passed_to_worker(controller, tmp_path, monkeypatch):
-    assert controller.pdfConversionMethod == "original"
-    controller.setPdfConversionMethod("libreoffice")
-    controller._preferences.setValue.assert_called_with("pdfConversionMethod", "libreoffice")
-    controller.setPdfConversionMethod("invalid")
-    assert controller.pdfConversionMethod == "libreoffice"
+def test_removed_pdf_method_preference_is_ignored(controller, tmp_path, monkeypatch):
     controller._preferences.value.side_effect = lambda key, default, value_type=None: "libreoffice" if key == "pdfConversionMethod" else default
     restored = AppController(tmp_path)
-    assert restored.pdfConversionMethod == "libreoffice"
+    assert not hasattr(restored, "pdfConversionMethod")
+    assert not hasattr(restored, "setPdfConversionMethod")
 
     document = tmp_path / "input.docx"
     document.touch()
@@ -262,13 +258,29 @@ def test_pdf_conversion_method_is_saved_and_passed_to_worker(controller, tmp_pat
     factory = Mock(return_value=worker)
     monkeypatch.setattr(controller_module, "ConversionWorker", factory)
     restored.startConversion()
-    assert factory.call_args.args[1].prefer_libreoffice_pdf is True
+    assert factory.call_args.args[1] is restored._app_settings
     worker.start.assert_called_once()
 
 
-def test_invalid_saved_pdf_conversion_method_defaults_to_original(controller, tmp_path):
-    controller._preferences.value.side_effect = lambda key, default, value_type=None: "invalid" if key == "pdfConversionMethod" else default
-    assert AppController(tmp_path).pdfConversionMethod == "original"
+def test_completion_notice_includes_unique_dependency_messages(controller, tmp_path):
+    from backend.job_model import ConversionJob
+
+    jobs = [ConversionJob(tmp_path / name, tmp_path / "out.pdf", tmp_path, "pdf") for name in ("a.docx", "b.docx", "c.xlsx")]
+    controller._job_list.set_jobs(jobs)
+    notifications = Mock()
+    controller.notify.connect(notifications)
+    word = "Microsoft Word 설치가 필요합니다."
+    excel = "Microsoft Excel 설치가 필요합니다."
+    for job, message in zip(jobs, (word, word, excel)):
+        controller._on_job_changed(job.id, "실패", 0, message)
+        controller._on_dependency_missing(message)
+    controller._on_all_finished(False)
+    title, body, severity = notifications.call_args.args
+    assert title == "변환 작업 완료"
+    assert body.count(word) == 1
+    assert body.count(excel) == 1
+    assert "실패 3개" in body
+    assert severity == "warning"
 
 
 def test_file_list_sort_by_column_and_direction(controller, tmp_path):
@@ -717,14 +729,10 @@ def test_full_application_qml_still_loads(controller, application):
     window = engine.rootObjects()[0]
     QTest.qWait(50)
     assert len(visual_items(window.contentItem(), "folderTreeView")) == 1
-    pdf_method = visual_items(window.contentItem(), "pdfConversionMethodCombo")[0]
-    assert pdf_method.parentItem().property("visible")
-    assert pdf_method.property("currentIndex") == 0
-    controller.setPdfConversionMethod("libreoffice")
-    QTest.qWait(20)
-    assert pdf_method.property("currentIndex") == 1
+    assert visual_items(window.contentItem(), "pdfConversionMethodCombo") == []
     controller.setConversionMode("image")
-    assert not pdf_method.parentItem().property("visible")
+    image_format = visual_items(window.contentItem(), "imageFormatCombo")[0]
+    assert image_format.parentItem().property("visible")
     assert not [warning for warning in warnings if "FolderTreePanel.qml" in warning or "FileListPanel.qml" in warning]
     window.close()
     window.deleteLater()

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import sys
-from dataclasses import replace
 from pathlib import Path
 
 from PySide6.QtCore import Property, QObject, QSettings, QStandardPaths, QUrl, Signal, Slot
@@ -29,7 +28,6 @@ class AppController(QObject):
     outputFolderChanged = Signal()
     conversionModeChanged = Signal()
     imageFormatChanged = Signal()
-    pdfConversionMethodChanged = Signal()
     overwriteChanged = Signal()
     busyChanged = Signal()
     currentFolderChanged = Signal()
@@ -65,9 +63,6 @@ class AppController(QObject):
         self._output_folder = str(Path(saved_output))
         self._conversion_mode = self._preferences.value("conversionMode", "pdf", str)
         self._image_format = self._preferences.value("imageFormat", "png", str)
-        self._pdf_conversion_method = self._preferences.value("pdfConversionMethod", "original", str)
-        if self._pdf_conversion_method not in {"original", "libreoffice"}:
-            self._pdf_conversion_method = "original"
         self._overwrite = self._preferences.value("overwrite", False, bool)
         default_columns = ["modified", "size", "type"]
         saved_columns = self._preferences.value("fileListColumnOrder", default_columns, list)
@@ -87,6 +82,7 @@ class AppController(QObject):
         self._busy = False
         self._status_text = "대기 중"
         self._worker: ConversionWorker | None = None
+        self._dependency_messages: list[str] = []
 
         self._folder_tree.folderActivated.connect(self._on_folder_activated)
         self._file_list.folderActivated.connect(self._on_folder_activated)
@@ -159,10 +155,6 @@ class AppController(QObject):
     @Property(str, notify=imageFormatChanged)
     def imageFormat(self) -> str:
         return self._image_format
-
-    @Property(str, notify=pdfConversionMethodChanged)
-    def pdfConversionMethod(self) -> str:
-        return self._pdf_conversion_method
 
     @Property(bool, notify=overwriteChanged)
     def overwrite(self) -> bool:
@@ -326,14 +318,6 @@ class AppController(QObject):
             self._preferences.setValue("imageFormat", value)
             self.imageFormatChanged.emit()
 
-    @Slot(str)
-    def setPdfConversionMethod(self, method: str) -> None:
-        if method not in {"original", "libreoffice"} or self._busy or method == self._pdf_conversion_method:
-            return
-        self._pdf_conversion_method = method
-        self._preferences.setValue("pdfConversionMethod", method)
-        self.pdfConversionMethodChanged.emit()
-
     @Slot("QVariantList")
     def setFileListColumnOrder(self, order: list) -> None:
         columns = [str(column) for column in order]
@@ -419,8 +403,9 @@ class AppController(QObject):
         self._job_list.set_jobs(jobs)
         self._set_busy(True)
         self._set_status("변환 작업 진행 중")
-        settings = replace(self._app_settings, prefer_libreoffice_pdf=self._pdf_conversion_method == "libreoffice")
-        self._worker = ConversionWorker(jobs, settings, self)
+        self._dependency_messages.clear()
+        self._worker = ConversionWorker(jobs, self._app_settings, self)
+        self._worker.dependencyMissing.connect(self._on_dependency_missing)
         self._worker.jobChanged.connect(self._on_job_changed)
         self._worker.jobFinished.connect(self._on_job_finished)
         self._worker.allFinished.connect(self._on_all_finished)
@@ -480,13 +465,20 @@ class AppController(QObject):
             _, job = found
             self._history.append_job(job)
 
+    def _on_dependency_missing(self, message: str) -> None:
+        if message not in self._dependency_messages:
+            self._dependency_messages.append(message)
+
     def _on_all_finished(self, was_cancelled: bool) -> None:
         self._set_busy(False)
         self._set_status("취소됨" if was_cancelled else "작업 완료")
         self._worker = None
         _, completed, failed, cancelled = self._job_list.counts()
         if failed:
-            self.notify.emit("변환 작업 완료", f"완료 {completed}개, 실패 {failed}개, 취소 {cancelled}개입니다.", "warning")
+            summary = f"완료 {completed}개, 실패 {failed}개, 취소 {cancelled}개입니다."
+            if self._dependency_messages:
+                summary += "\n\n" + "\n\n".join(self._dependency_messages)
+            self.notify.emit("변환 작업 완료", summary, "warning")
         else:
             self.notify.emit("변환 작업 완료", f"완료 {completed}개, 취소 {cancelled}개입니다.", "info")
 

@@ -1,4 +1,0 @@
--r requirements.txt
-PyInstaller>=6.13,<7
-pytest>=8,<10
-ruff>=0.11,<1

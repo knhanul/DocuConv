@@ -38,7 +38,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name="POSID_DocumentConverter",
+    name="POSID_DocConv",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

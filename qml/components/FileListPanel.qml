@@ -240,7 +240,7 @@ Rectangle {
                 required property string typeLabel
                 required property string sizeText
                 required property string modifiedText
-                required property string extension
+                required property string filePath
                 objectName: "fileListRow"
                 width: fileView.contentWidth
                 height: 43
@@ -282,23 +282,14 @@ Rectangle {
                                 sourceSize: Qt.size(32, 32)
                                 fillMode: Image.PreserveAspectFit
                             }
-                            Rectangle {
-                                anchors.fill: parent
+                            Image {
+                                anchors.centerIn: parent
+                                width: 24
+                                height: 24
                                 visible: !fileRow.isFolder
-                                radius: 3
-                                color: fileRow.typeLabel === "한글" ? Theme.accentSoft :
-                                       fileRow.typeLabel === "Word" ? "#F3F1EF" :
-                                       fileRow.typeLabel === "Excel" ? Theme.successSoft :
-                                       fileRow.typeLabel === "PowerPoint" ? "#FFF6E8" : Theme.dangerSoft
-                                Text {
-                                    anchors.centerIn: parent
-                                    text: fileRow.extension.length > 2 ? fileRow.extension.substring(0, 2) : fileRow.extension
-                                    color: fileRow.typeLabel === "Excel" ? Theme.success :
-                                           fileRow.typeLabel === "PowerPoint" ? "#9A5B10" :
-                                           Theme.red
-                                    font.pixelSize: 9
-                                    font.bold: true
-                                }
+                                source: visible ? "image://filesystem/file/" + encodeURIComponent(fileRow.filePath) : ""
+                                sourceSize: Qt.size(32, 32)
+                                fillMode: Image.PreserveAspectFit
                             }
                         }
                         Label {

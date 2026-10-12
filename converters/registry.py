@@ -13,7 +13,6 @@ from converters.hwpx.hwp_to_hwpx import HwpToHwpxConverter
 from converters.image.document_to_image import DocumentToImageConverter
 from converters.pdf.excel_to_pdf import ExcelToPdfConverter
 from converters.pdf.hwp_to_pdf import HwpToPdfConverter
-from converters.pdf.libreoffice_to_pdf import LibreOfficeToPdfConverter
 from converters.pdf.powerpoint_to_pdf import PowerPointToPdfConverter
 from converters.pdf.word_to_pdf import WordToPdfConverter
 
@@ -35,20 +34,28 @@ def is_com_application_installed(progid: str) -> bool:
     return False
 
 
+def require_application(progid: str, name: str) -> None:
+    if not is_com_application_installed(progid):
+        raise DependencyMissingError(
+            f"{name}이(가) 설치되어 있지 않거나 COM 자동화 등록을 찾을 수 없습니다. "
+            f"이 문서를 변환하려면 {name} 설치가 필요합니다. "
+            "이미 설치되어 있다면 해당 프로그램의 설치 복구를 진행해 주세요."
+        )
+
+
 class ConverterRegistry:
     def __init__(self, settings: AppSettings) -> None:
-        self._settings = settings
         self._hwp_manager = HwpAutomationManager(settings)
         self._hwp_to_hwpx = HwpToHwpxConverter(self._hwp_manager)
         self._hwp_to_pdf = HwpToPdfConverter(self._hwp_manager)
         self._word_to_pdf = WordToPdfConverter(settings)
         self._excel_to_pdf = ExcelToPdfConverter(settings)
         self._powerpoint_to_pdf = PowerPointToPdfConverter(settings)
-        self._libreoffice_to_pdf = LibreOfficeToPdfConverter(settings)
         self._image = DocumentToImageConverter(settings)
 
     def convert(self, job: ConversionJob, progress: ProgressCallback, cancel_event: threading.Event) -> None:
         if job.mode == "hwpx":
+            require_application("HWPFrame.HwpObject", "한컴오피스 한글")
             self._hwp_to_hwpx.convert(job.input_path, job.output_path, progress, cancel_event)
             return
         if job.mode == "pdf":
@@ -68,7 +75,7 @@ class ConverterRegistry:
     ) -> None:
         ext = input_path.suffix.lower()
         if ext in HWP_EXTENSIONS:
-            converter, progid, name = self._hwp_to_pdf, "HWPFrame.HwpObject", "한글"
+            converter, progid, name = self._hwp_to_pdf, "HWPFrame.HwpObject", "한컴오피스 한글"
         elif ext in WORD_EXTENSIONS:
             converter, progid, name = self._word_to_pdf, "Word.Application", "Microsoft Word"
         elif ext in EXCEL_EXTENSIONS:
@@ -77,20 +84,9 @@ class ConverterRegistry:
             converter, progid, name = self._powerpoint_to_pdf, "PowerPoint.Application", "Microsoft PowerPoint"
         else:
             raise UnsupportedFormatError(f"PDF 변환을 지원하지 않는 형식입니다: {ext}")
-        if self._settings.prefer_libreoffice_pdf:
-            progress(1, "LibreOffice로 PDF 변환을 준비하고 있습니다.")
-            self._libreoffice_to_pdf.convert(input_path, output_path, progress, cancel_event)
-            return
         progress(1, f"{name} 설치 여부를 확인하고 있습니다.")
-        if is_com_application_installed(progid):
-            try:
-                converter.convert(input_path, output_path, progress, cancel_event)
-                return
-            except DependencyMissingError:
-                progress(5, f"{name}을 실행할 수 없어 LibreOffice 대체 엔진을 사용합니다.")
-        else:
-            progress(5, f"{name}이 설치되어 있지 않아 LibreOffice 대체 엔진을 사용합니다.")
-        self._libreoffice_to_pdf.convert(input_path, output_path, progress, cancel_event)
+        require_application(progid, name)
+        converter.convert(input_path, output_path, progress, cancel_event)
 
     def shutdown(self) -> None:
         self._hwp_manager.shutdown()

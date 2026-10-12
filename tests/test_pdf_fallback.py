@@ -22,89 +22,55 @@ from converters.registry import ConverterRegistry, is_com_application_installed
         (".pptx", "_powerpoint_to_pdf", "PowerPoint.Application"),
     ],
 )
-def test_native_application_preferred(monkeypatch, extension, attribute, progid):
+def test_native_application_used(monkeypatch, extension, attribute, progid):
     registry = ConverterRegistry(AppSettings())
     native = Mock()
-    fallback = Mock()
     detector = Mock(return_value=True)
     setattr(registry, attribute, native)
-    registry._libreoffice_to_pdf = fallback
     monkeypatch.setattr("converters.registry.is_com_application_installed", detector)
     args = (Path("document" + extension), Path("out.pdf"), Mock(), threading.Event())
     registry.convert_to_pdf(*args)
     detector.assert_called_once_with(progid)
     native.convert.assert_called_once_with(*args)
-    fallback.convert.assert_not_called()
 
 
-@pytest.mark.parametrize("extension", [".hwp", ".hwpx", ".docx", ".xlsx", ".pptx", ".csv"])
-def test_missing_application_uses_fallback(monkeypatch, extension):
+@pytest.mark.parametrize(
+    ("extension", "name", "attribute"),
+    [
+        (".hwp", "한컴오피스 한글", "_hwp_to_pdf"),
+        (".hwpx", "한컴오피스 한글", "_hwp_to_pdf"),
+        (".docx", "Microsoft Word", "_word_to_pdf"),
+        (".xlsx", "Microsoft Excel", "_excel_to_pdf"),
+        (".pptx", "Microsoft PowerPoint", "_powerpoint_to_pdf"),
+        (".csv", "Microsoft Excel", "_excel_to_pdf"),
+    ],
+)
+def test_missing_application_requires_installation(monkeypatch, extension, name, attribute):
     registry = ConverterRegistry(AppSettings())
-    fallback = Mock()
-    registry._libreoffice_to_pdf = fallback
+    native = Mock()
+    setattr(registry, attribute, native)
     monkeypatch.setattr("converters.registry.is_com_application_installed", lambda _: False)
     args = (Path("document" + extension), Path("out.pdf"), Mock(), threading.Event())
-    registry.convert_to_pdf(*args)
-    fallback.convert.assert_called_once_with(*args)
+    with pytest.raises(DependencyMissingError, match=f"{name} 설치가 필요합니다"):
+        registry.convert_to_pdf(*args)
+    native.convert.assert_not_called()
 
 
-@pytest.mark.parametrize("extension", [".hwp", ".hwpx", ".docx", ".xlsx", ".pptx"])
-def test_libreoffice_option_skips_native_application(monkeypatch, extension):
-    registry = ConverterRegistry(AppSettings(prefer_libreoffice_pdf=True))
-    registry._libreoffice_to_pdf = Mock()
-    for name in ("_hwp_to_pdf", "_word_to_pdf", "_excel_to_pdf", "_powerpoint_to_pdf"):
-        setattr(registry, name, Mock())
-    detector = Mock(return_value=True)
-    monkeypatch.setattr("converters.registry.is_com_application_installed", detector)
-    args = (Path("document" + extension), Path("out.pdf"), Mock(), threading.Event())
-    registry.convert_to_pdf(*args)
-    registry._libreoffice_to_pdf.convert.assert_called_once_with(*args)
-    detector.assert_not_called()
-    for name in ("_hwp_to_pdf", "_word_to_pdf", "_excel_to_pdf", "_powerpoint_to_pdf"):
-        getattr(registry, name).convert.assert_not_called()
-
-
-def test_libreoffice_option_does_not_open_native_when_missing(monkeypatch):
-    registry = ConverterRegistry(AppSettings(prefer_libreoffice_pdf=True))
-    registry._libreoffice_to_pdf = Mock()
-    registry._libreoffice_to_pdf.convert.side_effect = DependencyMissingError("LibreOffice가 없습니다")
-    registry._excel_to_pdf = Mock()
-    detector = Mock(return_value=True)
-    monkeypatch.setattr("converters.registry.is_com_application_installed", detector)
-    with pytest.raises(DependencyMissingError, match="LibreOffice"):
-        registry.convert_to_pdf(Path("document.xlsx"), Path("out.pdf"), Mock(), threading.Event())
-    registry._excel_to_pdf.convert.assert_not_called()
-    detector.assert_not_called()
-
-
-def test_registered_but_unavailable_application_uses_fallback(monkeypatch):
+@pytest.mark.parametrize("error", [DependencyMissingError("실행할 수 없습니다"), ConversionError("invalid document")])
+def test_native_errors_are_not_retried(monkeypatch, error):
     registry = ConverterRegistry(AppSettings())
     registry._word_to_pdf = Mock()
-    registry._word_to_pdf.convert.side_effect = DependencyMissingError("unavailable")
-    registry._libreoffice_to_pdf = Mock()
+    registry._word_to_pdf.convert.side_effect = error
     monkeypatch.setattr("converters.registry.is_com_application_installed", lambda _: True)
-    args = (Path("document.docx"), Path("out.pdf"), Mock(), threading.Event())
-    registry.convert_to_pdf(*args)
-    registry._libreoffice_to_pdf.convert.assert_called_once_with(*args)
-
-
-def test_document_errors_do_not_use_fallback(monkeypatch):
-    registry = ConverterRegistry(AppSettings())
-    registry._word_to_pdf = Mock()
-    registry._word_to_pdf.convert.side_effect = ConversionError("invalid document")
-    registry._libreoffice_to_pdf = Mock()
-    monkeypatch.setattr("converters.registry.is_com_application_installed", lambda _: True)
-    with pytest.raises(ConversionError, match="invalid document"):
+    with pytest.raises(type(error), match=str(error)):
         registry.convert_to_pdf(Path("document.docx"), Path("out.pdf"), Mock(), threading.Event())
-    registry._libreoffice_to_pdf.convert.assert_not_called()
+    assert registry._word_to_pdf.convert.call_count == 1
 
 
-def test_unsupported_format_does_not_use_fallback():
+def test_unsupported_format_is_rejected():
     registry = ConverterRegistry(AppSettings())
-    registry._libreoffice_to_pdf = Mock()
     with pytest.raises(UnsupportedFormatError):
         registry.convert_to_pdf(Path("document.zip"), Path("out.pdf"), Mock(), threading.Event())
-    registry._libreoffice_to_pdf.convert.assert_not_called()
 
 
 def test_image_mode_accepts_only_pdf():
@@ -121,16 +87,17 @@ def test_image_conversion_rejects_documents(tmp_path):
         converter.convert(document, tmp_path / "out", "png", Mock(), threading.Event())
 
 
-def test_image_job_does_not_touch_pdf_fallback():
+def test_image_job_does_not_require_office(monkeypatch):
     registry = ConverterRegistry(AppSettings())
     registry._image = Mock()
-    registry._libreoffice_to_pdf = Mock()
+    detector = Mock(return_value=False)
+    monkeypatch.setattr("converters.registry.is_com_application_installed", detector)
     job = SimpleNamespace(mode="image", input_path=Path("a.pdf"), output_path=Path("out"), image_format="png")
     progress = Mock()
     event = threading.Event()
     registry.convert(job, progress, event)
     registry._image.convert.assert_called_once_with(job.input_path, job.output_path, "png", progress, event)
-    registry._libreoffice_to_pdf.convert.assert_not_called()
+    detector.assert_not_called()
 
 
 @pytest.mark.parametrize("registered_view", [64, 32, None])
@@ -164,13 +131,20 @@ def test_com_detection_is_unavailable_outside_windows(monkeypatch):
     assert not is_com_application_installed("Word.Application")
 
 
-def test_hwpx_conversion_remains_native_only():
+@pytest.mark.parametrize("installed", [True, False])
+def test_hwpx_conversion_requires_hangul(monkeypatch, installed):
     registry = ConverterRegistry(AppSettings())
     registry._hwp_to_hwpx = Mock()
-    registry._libreoffice_to_pdf = Mock()
+    detector = Mock(return_value=installed)
+    monkeypatch.setattr("converters.registry.is_com_application_installed", detector)
     job = SimpleNamespace(mode="hwpx", input_path=Path("document.hwp"), output_path=Path("out.hwpx"))
     progress = Mock()
     event = threading.Event()
-    registry.convert(job, progress, event)
-    registry._hwp_to_hwpx.convert.assert_called_once_with(job.input_path, job.output_path, progress, event)
-    registry._libreoffice_to_pdf.convert.assert_not_called()
+    if installed:
+        registry.convert(job, progress, event)
+        registry._hwp_to_hwpx.convert.assert_called_once_with(job.input_path, job.output_path, progress, event)
+    else:
+        with pytest.raises(DependencyMissingError, match="한컴오피스 한글 설치가 필요합니다"):
+            registry.convert(job, progress, event)
+        registry._hwp_to_hwpx.convert.assert_not_called()
+    detector.assert_called_once_with("HWPFrame.HwpObject")
